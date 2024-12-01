@@ -1,0 +1,7 @@
+[workspace]
+members = ["days/day01"]
+resolver = "2"
+
+[workspace.dependencies]
+parameterized = "2.0.0"
+common = { path = "common"}
