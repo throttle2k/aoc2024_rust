@@ -1,5 +1,5 @@
 [workspace]
-members = ["days/day01"]
+members = ["days/day01", "days/day02"]
 resolver = "2"
 
 [workspace.dependencies]
