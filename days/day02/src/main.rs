@@ -8,7 +8,15 @@ fn is_report_safe(report: &[usize]) -> bool {
     })
 }
 
-fn count_safe(input: &str) -> usize {
+fn is_safe_removing(report: &[usize]) -> bool {
+    (0..report.len()).any(|i| {
+        let mut reduced = report.to_vec();
+        reduced.remove(i);
+        is_report_safe(&reduced)
+    })
+}
+
+fn count_safe(input: &str, can_remove: bool) -> usize {
     input
         .lines()
         .map(|l| {
@@ -18,7 +26,12 @@ fn count_safe(input: &str) -> usize {
                 .collect::<Vec<_>>()
         })
         .filter_map(|report| {
-            if is_report_safe(&report) {
+            let is_safe = if can_remove {
+                is_safe_removing(&report)
+            } else {
+                is_report_safe(&report)
+            };
+            if is_safe {
                 Some(report)
             } else {
                 None
@@ -29,7 +42,8 @@ fn count_safe(input: &str) -> usize {
 
 fn main() {
     let input = read_input("day02.txt");
-    println!("Part 1 = {}", count_safe(&input));
+    println!("Part 1 = {}", count_safe(&input, false));
+    println!("Part 2 = {}", count_safe(&input, true));
 }
 
 #[cfg(test)]
@@ -44,6 +58,17 @@ mod day02_tests {
 1 3 2 4 5
 8 6 4 4 1
 1 3 6 7 9"#;
-        assert_eq!(count_safe(input), 2);
+        assert_eq!(count_safe(input, false), 2);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9"#;
+        assert_eq!(count_safe(input, true), 4);
     }
 }
