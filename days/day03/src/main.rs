@@ -2,21 +2,28 @@ use common::read_input;
 
 #[derive(Debug)]
 enum ParserState {
-    ReadM,
+    ReadO,
+    ReadApostrophe,
+    ReadT,
+    ReadOpenParenOrN(bool),
+    ReadClosedParenDoOrDont(bool),
+    DoneDoOrDont(bool),
+    ReadMOrD,
     ReadU,
     ReadL,
-    ReadOpenP,
+    ReadOpenParen,
     ReadFirstNum(String),
     ReadSecondNum(i32, String),
-    Done(i32),
+    DoneMul(i32),
 }
 
 fn transition(state: &ParserState, c: char) -> ParserState {
     match (state, c) {
-        (ParserState::ReadM, 'm') => ParserState::ReadU,
+        (ParserState::ReadMOrD, 'm') => ParserState::ReadU,
+        (ParserState::ReadMOrD, 'd') => ParserState::ReadO,
         (ParserState::ReadU, 'u') => ParserState::ReadL,
-        (ParserState::ReadL, 'l') => ParserState::ReadOpenP,
-        (ParserState::ReadOpenP, '(') => ParserState::ReadFirstNum(String::new()),
+        (ParserState::ReadL, 'l') => ParserState::ReadOpenParen,
+        (ParserState::ReadOpenParen, '(') => ParserState::ReadFirstNum(String::new()),
         (ParserState::ReadFirstNum(s), c) if c.to_digit(10).is_some() => {
             let mut s = s.clone();
             s.push(c);
@@ -31,28 +38,39 @@ fn transition(state: &ParserState, c: char) -> ParserState {
             ParserState::ReadSecondNum(*first_num, s)
         }
         (ParserState::ReadSecondNum(first_num, s), ')') => {
-            ParserState::Done(first_num * s.parse::<i32>().unwrap())
+            ParserState::DoneMul(first_num * s.parse::<i32>().unwrap())
         }
-        (_, _) => ParserState::ReadM,
+        (ParserState::ReadO, 'o') => ParserState::ReadOpenParenOrN(true),
+        (ParserState::ReadOpenParenOrN(true), 'n') => ParserState::ReadApostrophe,
+        (ParserState::ReadOpenParenOrN(b), '(') => ParserState::ReadClosedParenDoOrDont(*b),
+        (ParserState::ReadApostrophe, '\'') => ParserState::ReadT,
+        (ParserState::ReadT, 't') => ParserState::ReadOpenParenOrN(false),
+        (ParserState::ReadClosedParenDoOrDont(b), ')') => ParserState::DoneDoOrDont(*b),
+        (_, _) => ParserState::ReadMOrD,
     }
 }
 
-fn parse_input(input: &str) -> i32 {
-    let (_state, mul_sum) = input
-        .chars()
-        .fold((ParserState::ReadM, 0), |(state, mul_sum), c| {
+fn parse_input(input: &str, check_do: bool) -> i32 {
+    let (_state, mul_sum, _enabled) = input.chars().fold(
+        (ParserState::ReadMOrD, 0, true),
+        |(state, mul_sum, enabled), c| {
             let new_state = transition(&state, c);
-            match new_state {
-                ParserState::Done(n) => (ParserState::ReadM, mul_sum + n),
-                _ => (new_state, mul_sum),
-            }
-        });
+            let (state, n, enabled) = match new_state {
+                ParserState::DoneMul(n) => (ParserState::ReadMOrD, n, enabled),
+                ParserState::DoneDoOrDont(b) => (ParserState::ReadMOrD, 0, !check_do || b),
+                _ => (new_state, 0, enabled),
+            };
+            let mul_sum = if enabled { mul_sum + n } else { mul_sum };
+            (state, mul_sum, enabled)
+        },
+    );
     mul_sum
 }
 
 fn main() {
     let input = read_input("day03.txt");
-    println!("Part 1 = {}", parse_input(input.as_str()));
+    println!("Part 1 = {}", parse_input(input.as_str(), false));
+    println!("Part 2 = {}", parse_input(input.as_str(), true));
 }
 
 #[cfg(test)]
@@ -66,12 +84,18 @@ mod day03_tests {
         expected = { 2024, 492, 0, 0, 0, 0 }
     )]
     fn test_simple(input: &str, expected: i32) {
-        assert_eq!(parse_input(input), expected);
+        assert_eq!(parse_input(input, false), expected);
     }
 
     #[test]
     fn part1() {
         let input = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))";
-        assert_eq!(parse_input(input), 161);
+        assert_eq!(parse_input(input, false), 161);
+    }
+
+    #[test]
+    fn part2() {
+        let input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
+        assert_eq!(parse_input(input, true), 48);
     }
 }
