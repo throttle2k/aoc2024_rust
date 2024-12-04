@@ -109,13 +109,42 @@ fn count_xmas(input: &str) -> usize {
             count_xmas_in_row(row) + count_xmas_in_row(&rev)
         })
         .sum::<usize>();
-
     count
+}
+
+fn count_x_mas(input: &str) -> usize {
+    let input = input
+        .lines()
+        .map(|l| l.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+    let rows = input.len();
+    let cols = input.first().unwrap().len();
+    (1..rows - 1)
+        .map(|row| {
+            (1..cols - 1)
+                .map(move |col| (row, col))
+                .filter(|(row, col)| *input.get(*row).unwrap().get(*col).unwrap() == 'A')
+                .filter(|(row, col)| {
+                    (*input.get(row - 1).unwrap().get(col - 1).unwrap() == 'M'
+                        && *input.get(row + 1).unwrap().get(col + 1).unwrap() == 'S')
+                        || (*input.get(row - 1).unwrap().get(col - 1).unwrap() == 'S'
+                            && *input.get(row + 1).unwrap().get(col + 1).unwrap() == 'M')
+                })
+                .filter(|(row, col)| {
+                    (*input.get(row - 1).unwrap().get(col + 1).unwrap() == 'M'
+                        && *input.get(row + 1).unwrap().get(col - 1).unwrap() == 'S')
+                        || (*input.get(row - 1).unwrap().get(col + 1).unwrap() == 'S'
+                            && *input.get(row + 1).unwrap().get(col - 1).unwrap() == 'M')
+                })
+                .count()
+        })
+        .sum()
 }
 
 fn main() {
     let input = read_input("day04.txt");
     println!("Part 1 = {}", count_xmas(input.as_str()));
+    println!("Part 2 = {}", count_x_mas(input.as_str()));
 }
 
 #[cfg(test)]
@@ -198,5 +227,20 @@ SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX"#;
         assert_eq!(count_xmas(input), 18);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX"#;
+        assert_eq!(count_x_mas(input), 9);
     }
 }
