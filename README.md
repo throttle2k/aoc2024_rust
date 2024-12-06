@@ -6,4 +6,5 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 2: Red-Nosed Reports
 - [x] Day 3: Mull It Over
 - [X] Day 4: Ceres Search
-- [ ] Day 5: Print Queue
+- [X] Day 5: Print Queue
+- [ ] Day 6: Guard Gallivant
