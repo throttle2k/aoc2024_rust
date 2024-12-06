@@ -5,7 +5,7 @@ use common::read_input;
 
 type Position = (usize, usize);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum Direction {
     North,
     East,
@@ -13,7 +13,7 @@ enum Direction {
     West,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Cell {
     Floor,
     Obstruction,
@@ -30,9 +30,25 @@ impl LabMap {
     fn cell_at(&self, (row, col): Position) -> &Cell {
         self.grid.get(row * self.cols + col).unwrap()
     }
+
+    fn block_cell_at(&self, (row, col): Position) -> Self {
+        let idx = row * self.cols + col;
+        let new_grid = self
+            .grid
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, cell)| if i == idx { Cell::Obstruction } else { cell })
+            .collect::<Vec<_>>();
+        Self {
+            grid: new_grid,
+            rows: self.rows,
+            cols: self.cols,
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Guard {
     position: Position,
     direction: Direction,
@@ -49,7 +65,7 @@ impl Guard {
         if next_position.0 < 0
             || next_position.0 as usize >= map.rows
             || next_position.1 < 0
-            || next_position.1 as usize > map.cols
+            || next_position.1 as usize >= map.cols
         {
             return None;
         }
@@ -73,14 +89,40 @@ impl Guard {
 
     fn walk(&self, map: &LabMap) -> Vec<Position> {
         let mut positions = vec![self.position];
+        let mut guard_positions = vec![self.clone()];
         let mut current = self.clone();
         while let Some(guard) = current.step(map) {
             current = guard.clone();
             if !positions.contains(&guard.position) {
                 positions.push(guard.position);
             }
+            if guard_positions.contains(&guard) {
+                return vec![];
+            } else {
+                guard_positions.push(guard.clone());
+            }
         }
         positions
+    }
+
+    fn count_loops(&self, map: &LabMap) -> usize {
+        let path = self.walk(&map);
+        path.iter()
+            .filter_map(|(row, col)| {
+                if (row, col) != (&self.position.0, &self.position.1)
+                    && matches!(map.cell_at((*row, *col)), Cell::Floor)
+                {
+                    let new_map = map.block_cell_at((*row, *col));
+                    if self.walk(&new_map).len() > 0 {
+                        None
+                    } else {
+                        Some(1)
+                    }
+                } else {
+                    None
+                }
+            })
+            .sum()
     }
 }
 
@@ -125,6 +167,7 @@ fn main() {
     let input = read_input("day06.txt");
     let (map, guard) = parse_input(&input);
     println!("Part 1 = {}", guard.walk(&map).iter().count());
+    println!("Part 2 = {}", guard.count_loops(&map));
 }
 
 #[cfg(test)]
@@ -145,5 +188,21 @@ mod day06_tests {
 ......#..."#;
         let (map, guard) = parse_input(input);
         assert_eq!(guard.walk(&map).iter().count(), 41);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#..."#;
+        let (map, guard) = parse_input(input);
+        assert_eq!(guard.count_loops(&map), 6);
     }
 }
