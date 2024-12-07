@@ -78,6 +78,10 @@ fn main() {
     let input = read_input("day07.txt");
     let operators = vec![|a, b| a + b, |a, b| a * b];
     println!("Part 1 = {}", sum_of_valid(input.as_str(), &operators));
+    let operators = vec![|a, b| a + b, |a, b| a * b, |a, b| {
+        format!("{a}{b}").parse().unwrap()
+    }];
+    println!("Part 2 = {}", sum_of_valid(input.as_str(), &operators));
 }
 
 #[cfg(test)]
@@ -119,5 +123,33 @@ mod day07_tests {
 292: 11 6 16 20"#;
         let operators = vec![|a, b| a + b, |a, b| a * b];
         assert_eq!(sum_of_valid(input, &operators), 3749);
+    }
+
+    #[parameterized(
+        input = { "156: 15 6", "7290: 6 8 6 15", "192: 17 8 14" },
+        expected = { Ok(156), Ok(7290), Ok(192) }
+    )]
+    fn test_with_concatenation(input: &str, expected: Result<u64, ()>) {
+        let operators = vec![|a, b| a + b, |a, b| a * b, |a, b| {
+            format!("{a}{b}").parse().unwrap()
+        }];
+        assert_eq!(validate_operation(input.into(), &operators), expected);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"190: 10 19
+3267: 81 40 27
+83: 17 5
+156: 15 6
+7290: 6 8 6 15
+161011: 16 10 13
+192: 17 8 14
+21037: 9 7 18 13
+292: 11 6 16 20"#;
+        let operators = vec![|a, b| a + b, |a, b| a * b, |a, b| {
+            format!("{a}{b}").parse().unwrap()
+        }];
+        assert_eq!(sum_of_valid(input, &operators), 11387);
     }
 }
