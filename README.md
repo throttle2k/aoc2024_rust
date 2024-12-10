@@ -10,4 +10,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 6: Guard Gallivant
 - [x] Day 7: Bridge Repair
 - [x] Day 8: Resonant Collinearity
-- [ ] Day 9: Disk Fragmenter
+- [x] Day 9: Disk Fragmenter
