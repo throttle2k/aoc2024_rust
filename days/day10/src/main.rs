@@ -82,7 +82,6 @@ impl TopographicMap {
     }
 
     fn walk(&self, trail_head: (usize, usize)) -> Vec<(usize, usize)> {
-        let mut visited = vec![];
         let mut result = vec![];
         let mut queue = vec![(trail_head)];
         while !queue.is_empty() {
@@ -93,17 +92,21 @@ impl TopographicMap {
             self.viable_neighbors(current_spot)
                 .iter()
                 .for_each(|neighbor| {
-                    if !visited.contains(neighbor) {
-                        visited.push(neighbor.clone());
-                        queue.push(neighbor.clone());
-                    }
+                    queue.push(neighbor.clone());
                 });
         }
         result
     }
 
     fn get_trail_head_score(&self, trail_head: (usize, usize)) -> usize {
-        self.walk(trail_head).iter().len()
+        let mut paths = self.walk(trail_head);
+        paths.sort();
+        paths.dedup();
+        paths.len()
+    }
+
+    fn get_trail_head_ranking(&self, trail_head: (usize, usize)) -> usize {
+        self.walk(trail_head).len()
     }
 
     fn sum_trail_head_scores(&self) -> usize {
@@ -112,12 +115,20 @@ impl TopographicMap {
             .map(|trail_head| self.get_trail_head_score(*trail_head))
             .sum()
     }
+
+    fn sum_trail_head_rankings(&self) -> usize {
+        self.trail_heads()
+            .iter()
+            .map(|trail_head| self.get_trail_head_ranking(*trail_head))
+            .sum()
+    }
 }
 
 fn main() {
     let input = read_input("day10.txt");
     let topographic_map = TopographicMap::from(input.as_str());
     println!("Part 1 = {}", topographic_map.sum_trail_head_scores());
+    println!("Part 2 = {}", topographic_map.sum_trail_head_rankings());
 }
 
 #[cfg(test)]
@@ -176,5 +187,32 @@ mod day10_tests {
 10456732"#;
         let topographic_map = TopographicMap::from(input);
         assert_eq!(topographic_map.sum_trail_head_scores(), 36);
+    }
+
+    #[test]
+    fn test_get_trail_ranking() {
+        let input = r#"9999909
+9943219
+9959929
+9965439
+9979949
+9187659
+9191111"#;
+        let topographic_map = TopographicMap::from(input);
+        assert_eq!(topographic_map.get_trail_head_ranking((0, 5)), 3);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732"#;
+        let topographic_map = TopographicMap::from(input);
+        assert_eq!(topographic_map.sum_trail_head_rankings(), 81);
     }
 }
