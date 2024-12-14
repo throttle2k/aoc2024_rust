@@ -15,3 +15,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 11: Plutonian Pebbles
 - [x] Day 12: Garden Groups
 - [x] Day 13: Claw Contraption
+- [ ] Day 14: Restroom Redoubt
