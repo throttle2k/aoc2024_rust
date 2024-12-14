@@ -90,6 +90,7 @@ impl Equation {
     }
 }
 
+#[derive(Debug, Clone)]
 struct ClawMachine {
     button_a: (i64, i64),
     button_b: (i64, i64),
@@ -137,6 +138,13 @@ impl From<&str> for ClawMachine {
 }
 
 impl ClawMachine {
+    fn with_delta(&self, delta: i64) -> Self {
+        Self {
+            prize: (self.prize.0 + delta, self.prize.1 + delta),
+            ..self.clone()
+        }
+    }
+
     fn price_for_prize(&self) -> Option<i64> {
         let coeff = vec![
             vec![self.button_a.0, self.button_b.0],
@@ -168,6 +176,15 @@ impl From<&str> for Arcade {
 }
 
 impl Arcade {
+    fn with_delta(self, delta: i64) -> Self {
+        let claw_machines = self
+            .claw_machines
+            .iter()
+            .map(|machine| machine.with_delta(delta))
+            .collect();
+        Self { claw_machines }
+    }
+
     fn find_min_price(&self) -> i64 {
         self.claw_machines
             .iter()
@@ -180,6 +197,8 @@ fn main() {
     let input = read_input("day13.txt");
     let arcade = Arcade::from(input.as_str());
     println!("Part 1 = {}", arcade.find_min_price());
+    let arcade = Arcade::from(input.as_str()).with_delta(10000000000000);
+    println!("Part 2 = {}", arcade.find_min_price());
 }
 
 #[cfg(test)]
@@ -251,5 +270,26 @@ Button B: X+27, Y+71
 Prize: X=18641, Y=10279"#;
         let arcade = Arcade::from(input);
         assert_eq!(arcade.find_min_price(), 480);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"Button A: X+94, Y+34
+Button B: X+22, Y+67
+Prize: X=8400, Y=5400
+
+Button A: X+26, Y+66
+Button B: X+67, Y+21
+Prize: X=12748, Y=12176
+
+Button A: X+17, Y+86
+Button B: X+84, Y+37
+Prize: X=7870, Y=6450
+
+Button A: X+69, Y+23
+Button B: X+27, Y+71
+Prize: X=18641, Y=10279"#;
+        let arcade = Arcade::from(input).with_delta(10000000000000);
+        assert_eq!(arcade.find_min_price(), 875318608908);
     }
 }
