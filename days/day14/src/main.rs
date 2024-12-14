@@ -89,7 +89,6 @@ impl Restroom {
         self.robots.iter().filter(|r| r.position == (x, y)).count()
     }
 
-    #[allow(dead_code)]
     fn to_string(&self) -> String {
         (0..self.rows)
             .map(|y| {
@@ -136,6 +135,10 @@ fn main() {
     let mut restroom = Restroom::new(input.as_str(), 103, 101);
     restroom = restroom.steps(100);
     println!("Part 1 = {}", restroom.safety_factor());
+    let mut restroom = Restroom::new(input.as_str(), 103, 101);
+    restroom = restroom.steps(8280);
+    println!("Part 2 = 8280");
+    println!("{}", restroom.to_string());
 }
 
 #[cfg(test)]
