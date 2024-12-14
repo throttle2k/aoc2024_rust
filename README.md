@@ -14,3 +14,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 10: Hoof It
 - [x] Day 11: Plutonian Pebbles
 - [x] Day 12: Garden Groups
+- [ ] Day 13: Claw Contraption
