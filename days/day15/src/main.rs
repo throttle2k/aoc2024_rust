@@ -3,7 +3,7 @@ use std::cell::RefCell;
 
 use common::read_input;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Tile {
     Wall,
     Floor,
@@ -38,21 +38,62 @@ impl Tile {
 }
 
 #[derive(Debug)]
-struct WarehouseBox(usize, usize);
-
-impl ToString for WarehouseBox {
-    fn to_string(&self) -> String {
-        "O".to_string()
-    }
+struct WarehouseBox {
+    col: usize,
+    row: usize,
+    glyph: String,
+    scaled: bool,
 }
 
 impl WarehouseBox {
-    fn new(col: usize, row: usize) -> Self {
-        Self(col, row)
+    fn to_string(&self, col: usize) -> String {
+        if self.col == col {
+            self.glyph.chars().nth(0).unwrap().to_string()
+        } else {
+            self.glyph.chars().nth(1).unwrap().to_string()
+        }
+    }
+
+    fn new(col: usize, row: usize, scaled: bool) -> Self {
+        let glyph = match scaled {
+            true => "[]".to_string(),
+            false => "O".to_string(),
+        };
+        Self {
+            col,
+            row,
+            scaled,
+            glyph,
+        }
     }
 
     fn gps(&self) -> usize {
-        self.1 * 100 + self.0
+        self.row * 100 + self.col
+    }
+
+    fn is_in(&self, col: usize, row: usize) -> bool {
+        let same_col = if self.scaled {
+            self.col == col || self.col + 1 == col
+        } else {
+            self.col == col
+        };
+        same_col && self.row == row
+    }
+
+    fn will_hit(&self, col: usize, row: usize, movement: &Movement) -> bool {
+        let same_col = if self.scaled {
+            match movement {
+                Movement::North | Movement::South => {
+                    self.col == col || self.col + 1 == col || self.col == col + 1
+                }
+                Movement::East | Movement::West => {
+                    self.col == col || self.col + 1 == col || self.col == col + 1
+                }
+            }
+        } else {
+            self.col == col
+        };
+        same_col && self.row == row
     }
 }
 
@@ -61,6 +102,7 @@ struct Warehouse {
     map: Vec<Vec<Tile>>,
     boxes: Vec<RefCell<WarehouseBox>>,
     robot: Robot,
+    scaled: bool,
 }
 
 impl ToString for Warehouse {
@@ -78,8 +120,8 @@ impl ToString for Warehouse {
                             self.boxes
                                 .iter()
                                 .find_map(|b| {
-                                    if b.borrow().0 == col && b.borrow().1 == row {
-                                        Some(b.borrow().to_string())
+                                    if b.borrow().is_in(col, row) {
+                                        Some(b.borrow().to_string(col))
                                     } else {
                                         None
                                     }
@@ -94,8 +136,8 @@ impl ToString for Warehouse {
     }
 }
 
-impl From<&str> for Warehouse {
-    fn from(value: &str) -> Self {
+impl Warehouse {
+    fn from(value: &str, scaled: bool) -> Self {
         let (warehouse, movements) = value.split_once("\n\n").unwrap();
         let movements = movements
             .trim()
@@ -118,57 +160,90 @@ impl From<&str> for Warehouse {
                 l.trim()
                     .chars()
                     .enumerate()
-                    .map(|(col, c)| {
+                    .flat_map(|(col, c)| {
+                        let num = if scaled { 2 } else { 1 };
                         if c == 'O' {
-                            boxes.push(RefCell::new(WarehouseBox::new(col, row)));
-                            Tile::Floor
+                            boxes.push(RefCell::new(WarehouseBox::new(col * num, row, scaled)));
+                            vec![Tile::Floor; num]
                         } else if c == '@' {
-                            robot.col = col;
+                            robot.col = col * num;
                             robot.row = row;
-                            Tile::Floor
+                            vec![Tile::Floor; num]
                         } else {
-                            c.into()
+                            vec![c.into(); num]
                         }
                     })
                     .collect()
             })
             .collect();
-        Self { map, boxes, robot }
+        Self {
+            map,
+            boxes,
+            robot,
+            scaled,
+        }
     }
-}
 
-impl Warehouse {
     fn tile_at(&self, col: usize, row: usize) -> &Tile {
         &self.map[row][col]
+    }
+
+    fn can_move_box(&self, wh_box: &RefCell<WarehouseBox>, movement: &Movement) -> bool {
+        let (prev_col, prev_row) = (wh_box.borrow().col, wh_box.borrow().row);
+        let (next_col, next_row) =
+            movement.next_position((wh_box.borrow().col, wh_box.borrow().row));
+        let walkable = match self.scaled {
+            true => {
+                self.tile_at(next_col, next_row).is_walkable()
+                    && self.tile_at(next_col + 1, next_row).is_walkable()
+            }
+            false => self.tile_at(next_col, next_row).is_walkable(),
+        };
+        walkable
+            && self
+                .boxes
+                .iter()
+                .filter(|&b| b.borrow().col != prev_col || b.borrow().row != prev_row)
+                .filter(|&b| b.borrow().will_hit(next_col, next_row, movement))
+                .all(|b| self.can_move_box(b, movement))
     }
 
     fn move_box(
         &self,
         wh_box: &RefCell<WarehouseBox>,
-        movement: Movement,
+        movement: &Movement,
     ) -> Option<(usize, usize)> {
-        let (prev_col, prev_row) = (wh_box.borrow().0, wh_box.borrow().1);
-        let (next_col, next_row) = movement.next_position((wh_box.borrow().0, wh_box.borrow().1));
-        if let Some(next_box) = self
-            .boxes
-            .iter()
-            .find(|&b| b.borrow().0 == next_col && b.borrow().1 == next_row)
+        let (prev_col, prev_row) = (wh_box.borrow().col, wh_box.borrow().row);
+        let (next_col, next_row) =
+            movement.next_position((wh_box.borrow().col, wh_box.borrow().row));
+        let walkable = match self.scaled {
+            true => {
+                self.tile_at(next_col, next_row).is_walkable()
+                    && self.tile_at(next_col + 1, next_row).is_walkable()
+            }
+            false => self.tile_at(next_col, next_row).is_walkable(),
+        };
+        if walkable
+            && self
+                .boxes
+                .iter()
+                .filter(|&b| b.borrow().col != prev_col || b.borrow().row != prev_row)
+                .filter(|&b| b.borrow().will_hit(next_col, next_row, movement))
+                .all(|b| self.can_move_box(b, movement))
         {
-            if let Some((new_col, new_row)) = self.move_box(next_box, movement) {
-                wh_box.borrow_mut().0 = new_col;
-                wh_box.borrow_mut().1 = new_row;
-                Some((prev_col, prev_row))
-            } else {
-                None
-            }
+            self.boxes
+                .iter()
+                .filter(|&b| b.borrow().col != prev_col || b.borrow().row != prev_row)
+                .filter(|&b| b.borrow().will_hit(next_col, next_row, movement))
+                .for_each(|next_box| {
+                    self.move_box(next_box, movement);
+                });
+
+            wh_box.borrow_mut().col = next_col;
+            wh_box.borrow_mut().row = next_row;
+            Some((prev_col, prev_row))
         } else {
-            if self.tile_at(next_col, next_row).is_walkable() {
-                wh_box.borrow_mut().0 = next_col;
-                wh_box.borrow_mut().1 = next_row;
-                Some((prev_col, prev_row))
-            } else {
-                None
-            }
+            None
         }
     }
 
@@ -177,15 +252,15 @@ impl Warehouse {
         if let Some(next_box) = self
             .boxes
             .iter()
-            .find(|&b| b.borrow().0 == next_col && b.borrow().1 == next_row)
+            .find(|&b| b.borrow().is_in(next_col, next_row))
         {
-            if let Some((new_col, new_row)) = self.move_box(next_box, movement) {
-                self.robot.col = new_col;
+            if let Some((_new_col, new_row)) = self.move_box(next_box, &movement) {
+                self.robot.col = (self.robot.col as isize + movement.delta().0) as usize;
                 self.robot.row = new_row;
             }
         } else {
             if self.tile_at(next_col, next_row).is_walkable() {
-                self.robot.col = next_col;
+                self.robot.col = (self.robot.col as isize + movement.delta().0) as usize;
                 self.robot.row = next_row;
             }
         };
@@ -251,13 +326,11 @@ struct Robot {
     movements: Vec<Movement>,
 }
 
-impl ToString for Robot {
+impl Robot {
     fn to_string(&self) -> String {
         "@".to_string()
     }
-}
 
-impl Robot {
     fn new(col: usize, row: usize, movements: Vec<Movement>) -> Self {
         Self {
             row,
@@ -269,8 +342,10 @@ impl Robot {
 
 fn main() {
     let input = read_input("day15.txt");
-    let warehouse = Warehouse::from(input.as_str()).walk();
+    let warehouse = Warehouse::from(input.as_str(), false).walk();
     println!("Part 1 = {}", warehouse.gps());
+    let warehouse = Warehouse::from(input.as_str(), true).walk();
+    println!("Part 2 = {}", warehouse.gps());
 }
 
 #[cfg(test)]
@@ -290,7 +365,7 @@ mod day15_tests {
 
 <^^>>>vv<v>>v<<"#;
         let (input_warehouse, _) = input.split_once("\n\n").unwrap();
-        let warehouse = Warehouse::from(input);
+        let warehouse = Warehouse::from(input, false);
         assert_eq!(warehouse.to_string(), input_warehouse);
     }
 
@@ -306,7 +381,7 @@ mod day15_tests {
 ########
 
 <^^>>>vv<v>>v<<"#;
-        let warehouse = Warehouse::from(input);
+        let warehouse = Warehouse::from(input, false);
         let warehouse = warehouse.step(Movement::West);
         assert_eq!(
             warehouse.to_string(),
@@ -381,7 +456,7 @@ mod day15_tests {
 ########
 
 <^^>>>vv<v>>v<<"#;
-        let warehouse = Warehouse::from(input).walk();
+        let warehouse = Warehouse::from(input, false).walk();
         assert_eq!(
             warehouse.to_string(),
             r#"########
@@ -418,7 +493,7 @@ vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
 <><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
 ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
 v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^"#;
-        let warehouse = Warehouse::from(input).walk();
+        let warehouse = Warehouse::from(input, false).walk();
         assert_eq!(
             warehouse.to_string(),
             r#"##########
@@ -446,7 +521,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^"#;
 ########
 
 <^^>>>vv<v>>v<<"#;
-        let warehouse = Warehouse::from(input).walk();
+        let warehouse = Warehouse::from(input, false).walk();
         assert_eq!(warehouse.gps(), 2028)
     }
 
@@ -473,7 +548,220 @@ vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
 <><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
 ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
 v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^"#;
-        let warehouse = Warehouse::from(input).walk();
+        let warehouse = Warehouse::from(input, false).walk();
         assert_eq!(warehouse.gps(), 10092);
+    }
+
+    #[test]
+    fn test_to_string_scaled() {
+        let input = r#"#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^"#;
+        let warehouse = Warehouse::from(input, true);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##..........##
+##....[][]@.##
+##....[]....##
+##..........##
+##############"#
+        );
+    }
+
+    #[test]
+    fn test_step_scaled() {
+        let input = r#"#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^"#;
+        let mut warehouse = Warehouse::from(input, true);
+        warehouse = warehouse.step(Movement::West);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##..........##
+##...[][]@..##
+##....[]....##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::South);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##..........##
+##...[][]...##
+##....[].@..##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::South);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##..........##
+##...[][]...##
+##....[]....##
+##.......@..##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::West);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##..........##
+##...[][]...##
+##....[]....##
+##......@...##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::West);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##..........##
+##...[][]...##
+##....[]....##
+##.....@....##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::North);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##...[][]...##
+##....[]....##
+##.....@....##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::North);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##...[][]...##
+##....[]....##
+##.....@....##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::West);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##...[][]...##
+##....[]....##
+##....@.....##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::West);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##...[][]...##
+##....[]....##
+##...@......##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::North);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##......##..##
+##...[][]...##
+##...@[]....##
+##..........##
+##..........##
+##############"#
+        );
+        warehouse = warehouse.step(Movement::North);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"##############
+##...[].##..##
+##...@.[]...##
+##....[]....##
+##..........##
+##..........##
+##############"#
+        );
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"##########
+#..O..O.O#
+#......O.#
+#.OO..O.O#
+#..O@..O.#
+#O#..O...#
+#O..O..O.#
+#.OO.O.OO#
+#....O...#
+##########
+
+<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^"#;
+        let mut warehouse = Warehouse::from(input, true);
+        assert_eq!(
+            warehouse.to_string(),
+            r#"####################
+##....[]....[]..[]##
+##............[]..##
+##..[][]....[]..[]##
+##....[]@.....[]..##
+##[]##....[]......##
+##[]....[]....[]..##
+##..[][]..[]..[][]##
+##........[]......##
+####################"#
+        );
+        warehouse = warehouse.walk();
+        assert_eq!(
+            warehouse.to_string(),
+            r#"####################
+##[].......[].[][]##
+##[]...........[].##
+##[]........[][][]##
+##[]......[]....[]##
+##..##......[]....##
+##..[]............##
+##..@......[].[][]##
+##......[][]..[]..##
+####################"#
+        );
+        assert_eq!(warehouse.gps(), 9021);
     }
 }

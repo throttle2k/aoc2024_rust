@@ -16,4 +16,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 12: Garden Groups
 - [x] Day 13: Claw Contraption
 - [x] Day 14: Restroom Redoubt
-- [ ] Day 15: Warehouse Woes
+- [x] Day 15: Warehouse Woes
