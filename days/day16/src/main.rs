@@ -1,6 +1,6 @@
 use std::{
     cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
+    collections::{BinaryHeap, HashMap, HashSet},
     isize, usize,
 };
 
@@ -82,6 +82,7 @@ struct State {
     position: (usize, usize),
     direction: Direction,
     cost: usize,
+    path: Vec<(usize, usize)>,
 }
 
 impl Ord for State {
@@ -102,6 +103,7 @@ impl State {
             position,
             direction: Direction::East,
             cost,
+            path: vec![position],
         }
     }
 
@@ -112,10 +114,13 @@ impl State {
             (self.position.0 as isize + col) as usize,
             (self.position.1 as isize + row) as usize,
         );
+        let mut path = self.path.clone();
+        path.push(position);
         Self {
             position,
             direction,
             cost: self.cost + cost,
+            path,
         }
     }
 }
@@ -161,26 +166,52 @@ impl Maze {
         self.end.0 - col + self.end.1 - row
     }
 
-    fn find_lowest_score(&self) -> usize {
+    fn find_paths_score(&self) -> Vec<(Vec<(usize, usize)>, usize)> {
         let initial_state = State::new(self.start, self.heuristic(self.start));
         let mut priority_queue: BinaryHeap<Reverse<State>> = BinaryHeap::new();
         priority_queue.push(Reverse(initial_state));
-        let mut visited = HashSet::new();
+        let mut visited = HashMap::new();
+        let mut results = vec![];
 
         while let Some(Reverse(state)) = priority_queue.pop() {
             if state.position == self.end {
-                return state.cost;
-            }
-            if visited.contains(&(state.position, state.direction.clone())) {
+                results.push((state.path.clone(), state.cost));
                 continue;
             }
-            visited.insert((state.position, state.direction.clone()));
+            let key = (state.position, state.direction.clone());
+            if let Some(&best_cost) = visited.get(&key) {
+                if state.cost > best_cost {
+                    continue;
+                }
+            }
+            visited.insert(key, state.cost);
 
-            self.valid_neighbors(&state).iter().for_each(|neighbor| {
-                priority_queue.push(Reverse(neighbor.clone()));
-            });
+            self.valid_neighbors(&state)
+                .into_iter()
+                .for_each(|neighbor| {
+                    priority_queue.push(Reverse(neighbor));
+                });
         }
-        unreachable!("Destination is unreachable");
+        results
+    }
+
+    fn find_lowest_score(&self) -> usize {
+        let mut paths = self.find_paths_score();
+        paths.sort_by_key(|(_paths, cost)| *cost);
+        paths.iter().next().unwrap().1
+    }
+
+    fn find_seats(&self) -> usize {
+        let paths = self.find_paths_score();
+        let lowest_score = paths.iter().map(|p| p.1).min().unwrap();
+        let mut set = HashSet::new();
+        paths.iter().filter(|p| p.1 == lowest_score).for_each(|p| {
+            p.0.iter().for_each(|path| {
+                set.insert(path);
+            })
+        });
+
+        set.len()
     }
 
     fn tile_at(&self, (col, row): (usize, usize)) -> &Tile {
@@ -213,6 +244,7 @@ fn main() {
     let input = read_input("day16.txt");
     let maze = Maze::from(input.as_str());
     println!("Part 1 = {}", maze.find_lowest_score());
+    println!("Part 2 = {}", maze.find_seats());
 }
 
 #[cfg(test)]
@@ -261,5 +293,49 @@ mod day16_tests {
 #################"#;
         let maze = Maze::from(input);
         assert_eq!(maze.find_lowest_score(), 11048);
+    }
+
+    #[test]
+    fn test_find_seats() {
+        let input = r#"###############
+#.......#....E#
+#.#.###.#.###.#
+#.....#.#...#.#
+#.###.#####.#.#
+#.#.#.......#.#
+#.#.#####.###.#
+#...........#.#
+###.#.#####.#.#
+#...#.....#.#.#
+#.#.#.###.#.#.#
+#.....#...#.#.#
+#.###.#.#.#.#.#
+#S..#.....#...#
+###############"#;
+        let maze = Maze::from(input);
+        assert_eq!(maze.find_seats(), 45);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"#################
+#...#...#...#..E#
+#.#.#.#.#.#.#.#.#
+#.#.#.#...#...#.#
+#.#.#.#.###.#.#.#
+#...#.#.#.....#.#
+#.#.#.#.#.#####.#
+#.#...#.#.#.....#
+#.#.#####.#.###.#
+#.#.#.......#...#
+#.#.###.#####.###
+#.#.#...#.....#.#
+#.#.#.#####.###.#
+#.#.#.........#.#
+#.#.#.#########.#
+#S#.............#
+#################"#;
+        let maze = Maze::from(input);
+        assert_eq!(maze.find_seats(), 64);
     }
 }
