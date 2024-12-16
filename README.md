@@ -17,3 +17,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 13: Claw Contraption
 - [x] Day 14: Restroom Redoubt
 - [x] Day 15: Warehouse Woes
+- [ ] Day 16: Reindeer Maze
