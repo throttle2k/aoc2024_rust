@@ -1,10 +1,7 @@
 use std::{
     cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
-    isize, usize,
+    collections::{BinaryHeap, HashSet}, isize, usize,
 };
-
-use common::read_input;
 
 const TURN_COST: usize = 1000;
 const MOVE_COST: usize = 1;
@@ -45,11 +42,11 @@ enum Direction {
 impl From<(isize, isize)> for Direction {
     fn from(value: (isize, isize)) -> Self {
         match value {
-            (-1, 0) => Self::West,
+            (-1,0) => Self::West,
             (1, 0) => Self::East,
             (0, -1) => Self::North,
             (0, 1) => Self::South,
-            (r, c) => panic!("Unknown direction ({r},{c})"),
+            (r, c) => panic!("Unknown direction ({r},{c})")
         }
     }
 }
@@ -97,25 +94,22 @@ impl PartialOrd for State {
 }
 
 impl State {
-    fn new(position: (usize, usize), cost: usize) -> Self {
+    fn new(position: (usize, usize)) -> Self {
         Self {
             position,
             direction: Direction::East,
-            cost,
+            cost: 0,
         }
     }
 
     fn to(&self, (col, row): (isize, isize)) -> Self {
         let direction = (col, row).into();
-        let cost = self.direction.cost_to(&direction) + MOVE_COST;
-        let position = (
-            (self.position.0 as isize + col) as usize,
-            (self.position.1 as isize + row) as usize,
-        );
+        let cost = self.direction.cost_to(&direction) ;       
+        let position = ((self.position.0 as isize + col) as usize, (self.position.1 as isize + col) as usize);
         Self {
             position,
             direction,
-            cost: self.cost + cost,
+            cost ,
         }
     }
 }
@@ -157,28 +151,20 @@ impl From<&str> for Maze {
 }
 
 impl Maze {
-    fn heuristic(&self, (col, row): (usize, usize)) -> usize {
-        self.end.0 - col + self.end.1 - row
-    }
-
     fn find_lowest_score(&self) -> usize {
-        let initial_state = State::new(self.start, self.heuristic(self.start));
+        let initial_state = State::new(self.start);
         let mut priority_queue: BinaryHeap<Reverse<State>> = BinaryHeap::new();
         priority_queue.push(Reverse(initial_state));
-        let mut visited = HashSet::new();
+        let mut visited: HashSet<State> = HashSet::new();
 
         while let Some(Reverse(state)) = priority_queue.pop() {
             if state.position == self.end {
                 return state.cost;
             }
-            if visited.contains(&(state.position, state.direction.clone())) {
+            if visited.contains(&state) {
                 continue;
             }
-            visited.insert((state.position, state.direction.clone()));
-
-            self.valid_neighbors(&state).iter().for_each(|neighbor| {
-                priority_queue.push(Reverse(neighbor.clone()));
-            });
+            visited.insert(state);
         }
         unreachable!("Destination is unreachable");
     }
@@ -187,32 +173,27 @@ impl Maze {
         &self.tiles[row][col]
     }
 
-    fn valid_neighbors(&self, state: &State) -> Vec<State> {
+    fn valid_neighbors(&self, state: State) -> Vec<State> {
         let mut deltas = vec![];
         if state.position.0 > 0 {
             deltas.push((-1, 0));
         }
-        if state.position.0 < self.tiles[0].len() - 1 {
+        if state.position.0 < self.tiles.len() - 1 {
             deltas.push((1, 0));
         }
         if state.position.1 > 0 {
             deltas.push((0, -1));
         }
-        if state.position.1 < self.tiles.len() - 1 {
+        if state.position.1 < self.tiles[0].len() - 1 {
             deltas.push((0, 1));
         }
-        deltas
-            .iter()
-            .map(|delta| state.to(*delta))
-            .filter(|new_state| self.tile_at(new_state.position).is_walkable())
-            .collect()
+        deltas.iter().map(|next| todo!())
+        todo!()
     }
 }
 
 fn main() {
-    let input = read_input("day16.txt");
-    let maze = Maze::from(input.as_str());
-    println!("Part 1 = {}", maze.find_lowest_score());
+    println!("Hello, world!");
 }
 
 #[cfg(test)]
@@ -220,46 +201,7 @@ mod day16_tests {
     use super::*;
 
     #[test]
-    fn test_find_lowest_score() {
-        let input = r#"###############
-#.......#....E#
-#.#.###.#.###.#
-#.....#.#...#.#
-#.###.#####.#.#
-#.#.#.......#.#
-#.#.#####.###.#
-#...........#.#
-###.#.#####.#.#
-#...#.....#.#.#
-#.#.#.###.#.#.#
-#.....#...#.#.#
-#.###.#.#.#.#.#
-#S..#.....#...#
-###############"#;
-        let maze = Maze::from(input);
-        assert_eq!(maze.find_lowest_score(), 7036);
-    }
-
-    #[test]
     fn part1() {
-        let input = r#"#################
-#...#...#...#..E#
-#.#.#.#.#.#.#.#.#
-#.#.#.#...#...#.#
-#.#.#.#.###.#.#.#
-#...#.#.#.....#.#
-#.#.#.#.#.#####.#
-#.#...#.#.#.....#
-#.#.#####.#.###.#
-#.#.#.......#...#
-#.#.###.#####.###
-#.#.#...#.....#.#
-#.#.#.#####.###.#
-#.#.#.........#.#
-#.#.#.#########.#
-#S#.............#
-#################"#;
-        let maze = Maze::from(input);
-        assert_eq!(maze.find_lowest_score(), 11048);
+        todo!();
     }
 }
