@@ -1,12 +1,26 @@
 use core::panic;
-use std::{collections::HashMap, fmt::Write};
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap},
+    fmt::Write,
+    usize,
+};
 
 use common::read_input;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Operand {
     Literal(usize),
     Combo(usize),
+}
+
+impl ToString for Operand {
+    fn to_string(&self) -> String {
+        match self {
+            Operand::Literal(operand) => format!("{operand}"),
+            Operand::Combo(operand) => format!("{operand}"),
+        }
+    }
 }
 
 impl Operand {
@@ -24,7 +38,7 @@ impl Operand {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Instruction {
     Adv(Operand),
     Bxl(Operand),
@@ -34,6 +48,21 @@ enum Instruction {
     Out(Operand),
     Bdv(Operand),
     Cdv(Operand),
+}
+
+impl ToString for Instruction {
+    fn to_string(&self) -> String {
+        match self {
+            Instruction::Adv(operand) => format!("0,{}", operand.to_string()),
+            Instruction::Bxl(operand) => format!("1,{}", operand.to_string()),
+            Instruction::Bst(operand) => format!("2,{}", operand.to_string()),
+            Instruction::Jnz(operand) => format!("3,{}", operand.to_string()),
+            Instruction::Bxc(operand) => format!("4,{}", operand.to_string()),
+            Instruction::Out(operand) => format!("5,{}", operand.to_string()),
+            Instruction::Bdv(operand) => format!("6,{}", operand.to_string()),
+            Instruction::Cdv(operand) => format!("7,{}", operand.to_string()),
+        }
+    }
 }
 
 impl From<&[&str]> for Instruction {
@@ -125,7 +154,7 @@ impl Instruction {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Computer {
     registers: HashMap<char, usize>,
     instructions: Vec<Instruction>,
@@ -180,6 +209,59 @@ impl Computer {
             self.output = self.output.strip_suffix(',').unwrap().to_string();
         }
     }
+
+    fn execute_until_same(&self) -> usize {
+        let mut values: BinaryHeap<Reverse<usize>> = BinaryHeap::new();
+
+        let target = self
+            .program()
+            .split(',')
+            .map(|c| c.parse().unwrap())
+            .collect::<Vec<usize>>();
+
+        for i in 1..8 {
+            values.push(Reverse(i));
+        }
+
+        while let Some(Reverse(val)) = values.pop() {
+            let mut computer = self.clone();
+            computer
+                .registers
+                .entry('a')
+                .and_modify(|value| *value = val)
+                .or_insert(val);
+            computer.output = String::new();
+            computer.execute_program();
+
+            let output = computer
+                .output
+                .split(',')
+                .map(|c| c.parse().unwrap())
+                .collect::<Vec<usize>>();
+
+            if output == target {
+                return val;
+            }
+
+            let len = output.len();
+
+            if output == target[target.len() - len..] {
+                for i in 0..8 {
+                    values.push(Reverse((val << 3) + i));
+                }
+            }
+        }
+
+        panic!("no such value of A found")
+    }
+
+    fn program(&self) -> String {
+        self.instructions
+            .iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    }
 }
 
 fn main() {
@@ -187,6 +269,8 @@ fn main() {
     let mut computer = Computer::from(input.as_str());
     computer.execute_program();
     println!("Part 1 = {}", computer.output);
+    let computer = Computer::from(input.as_str());
+    println!("Part 2 = {}", computer.execute_until_same());
 }
 
 #[cfg(test)]
@@ -267,5 +351,17 @@ Program: 0,1,5,4,3,0"#;
         let mut computer = Computer::from(input);
         computer.execute_program();
         assert_eq!(computer.output, "4,6,3,5,6,3,5,2,1,0".to_string());
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"Register A: 2024
+Register B: 0
+Register C: 0
+
+Program: 0,3,5,4,3,0"#;
+        let computer = Computer::from(input);
+        computer.execute_until_same();
+        assert_eq!(computer.execute_until_same(), 117440);
     }
 }
