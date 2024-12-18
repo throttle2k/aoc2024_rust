@@ -47,9 +47,10 @@ impl Memory {
         }
     }
 
-    fn drop(&mut self) {
+    fn drop(&mut self) -> (usize, usize) {
         let loc = self.corruption.remove(0);
-        self.cells[loc.1][loc.0] = MemoryCell::Corrupted
+        self.cells[loc.1][loc.0] = MemoryCell::Corrupted;
+        (loc.0, loc.1)
     }
 
     fn neighbors(&self, (col, row): (usize, usize)) -> Vec<(usize, usize)> {
@@ -81,13 +82,13 @@ impl Memory {
             .collect()
     }
 
-    fn escape(&mut self) -> usize {
+    fn escape(&mut self) -> Option<usize> {
         let mut visited = vec![];
         let mut queue = vec![(0, self.start)];
         while !queue.is_empty() {
             let (depth, current) = queue.remove(0);
             if current == self.target {
-                return depth;
+                return Some(depth);
             }
 
             if !visited.contains(&current) {
@@ -97,7 +98,17 @@ impl Memory {
                 });
             }
         }
-        unreachable!()
+        None
+    }
+
+    fn blocking_byte(&mut self) -> (usize, usize) {
+        let mut drop = self.drop();
+        while let Some(_steps) = self.escape() {
+            drop = self.drop();
+            println!("{}", self.to_string());
+            println!();
+        }
+        drop
     }
 }
 
@@ -109,11 +120,14 @@ fn main() {
         .map(|l| l.split_once(',').unwrap())
         .map(|(col, row)| (col.parse().unwrap(), row.parse().unwrap()))
         .collect::<Vec<(usize, usize)>>();
-    let mut memory = Memory::new(71, 71, input);
+    let mut memory = Memory::new(71, 71, input.clone());
     (0..1024).for_each(|_| {
         memory.drop();
     });
-    println!("Part 1 = {}", memory.escape());
+    println!("Part 1 = {}", memory.escape().unwrap());
+    let mut memory = Memory::new(71, 71, input);
+    let blocking_byte = memory.blocking_byte();
+    println!("Part 2 = ({},{})", blocking_byte.0, blocking_byte.1);
 }
 
 #[cfg(test)]
@@ -206,6 +220,46 @@ mod day18_tests {
         (0..12).for_each(|_| {
             memory.drop();
         });
-        assert_eq!(memory.escape(), 22);
+        assert_eq!(memory.escape(), Some(22));
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"5,4
+4,2
+4,5
+3,0
+2,1
+6,3
+2,4
+1,5
+0,6
+3,3
+2,6
+5,1
+1,2
+5,5
+2,5
+6,5
+1,4
+0,4
+6,4
+1,1
+6,1
+1,0
+0,5
+1,6
+2,0"#;
+        let input = input
+            .trim()
+            .lines()
+            .map(|l| l.split_once(',').unwrap())
+            .map(|(col, row)| (col.parse().unwrap(), row.parse().unwrap()))
+            .collect::<Vec<(usize, usize)>>();
+        let mut memory = Memory::new(7, 7, input);
+        (0..12).for_each(|_| {
+            memory.drop();
+        });
+        assert_eq!(memory.blocking_byte(), (6, 1));
     }
 }

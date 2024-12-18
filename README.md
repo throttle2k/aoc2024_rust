@@ -19,4 +19,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 15: Warehouse Woes
 - [x] Day 16: Reindeer Maze
 - [x] Day 17: Chronospatial Computer
-- [ ] Day 18: RAM Run
+- [x] Day 18: RAM Run
