@@ -21,4 +21,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 17: Chronospatial Computer
 - [x] Day 18: RAM Run
 - [x] Day 19: Linen Layout
-- [ ] Day 20: Race Condition
+- [x] Day 20: Race Condition

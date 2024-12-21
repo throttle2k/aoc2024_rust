@@ -2,10 +2,17 @@ use std::collections::HashMap;
 
 use common::read_input;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Ord, Eq, PartialOrd)]
 struct Cheat {
     start: (usize, usize),
     end: (usize, usize),
+}
+
+impl PartialEq for Cheat {
+    fn eq(&self, other: &Self) -> bool {
+        (self.start == other.start && self.end == other.end)
+            || (self.start == other.end && self.end == other.start)
+    }
 }
 
 impl Cheat {
@@ -16,15 +23,13 @@ impl Cheat {
 
 #[derive(Debug)]
 struct Race {
-    _start: (usize, usize),
-    _end: (usize, usize),
-    walls: Vec<(usize, usize)>,
+    _walls: Vec<(usize, usize)>,
     track: Vec<(usize, usize)>,
     cols: usize,
     rows: usize,
 }
 
-fn neighbors((row, col): (usize, usize), cols: usize, rows: usize) -> Vec<(usize, usize)> {
+fn neighbors((col, row): (usize, usize), cols: usize, rows: usize) -> Vec<(usize, usize)> {
     let mut deltas: Vec<(isize, isize)> = vec![];
     if col > 0 {
         deltas.push((-1, 0));
@@ -42,29 +47,40 @@ fn neighbors((row, col): (usize, usize), cols: usize, rows: usize) -> Vec<(usize
         .iter()
         .map(|(delta_col, delta_row)| {
             (
-                ((row as isize) + delta_row) as usize,
                 ((col as isize) + delta_col) as usize,
+                ((row as isize) + delta_row) as usize,
             )
         })
         .collect()
 }
 
+fn distance((from_col, from_row): (usize, usize), (to_col, to_row): (usize, usize)) -> usize {
+    let delta_col = if to_col >= from_col {
+        to_col - from_col
+    } else {
+        from_col - to_col
+    };
+    let delta_row = if to_row >= from_row {
+        to_row - from_row
+    } else {
+        from_row - to_row
+    };
+    delta_col + delta_row
+}
+
 impl From<&str> for Race {
     fn from(value: &str) -> Self {
-        let (walls, start, end, cols, rows) = value.trim().lines().enumerate().fold(
-            (Vec::new(), (0, 0), (0, 0), 0, 0),
-            |(walls, start, end, cols, rows), (row, l)| {
+        let (walls, start, cols, rows) = value.trim().lines().enumerate().fold(
+            (Vec::new(), (0, 0), 0, 0),
+            |(walls, start, cols, rows), (row, l)| {
                 l.trim().chars().enumerate().fold(
-                    (walls, start, end, cols, rows),
-                    |(mut walls, mut start, mut end, mut cols, mut rows), (col, tile)| {
+                    (walls, start, cols, rows),
+                    |(mut walls, mut start, mut cols, mut rows), (col, tile)| {
                         match tile {
-                            '.' => (),
+                            '.' | 'E' => (),
                             '#' => walls.push((col, row)),
                             'S' => {
                                 start = (col, row);
-                            }
-                            'E' => {
-                                end = (col, row);
                             }
                             c => panic!("Unknown tile {c}"),
                         }
@@ -74,7 +90,7 @@ impl From<&str> for Race {
                         if row > rows {
                             rows = row;
                         }
-                        (walls, start, end, cols, rows)
+                        (walls, start, cols, rows)
                     },
                 )
             },
@@ -96,10 +112,8 @@ impl From<&str> for Race {
         }
 
         Self {
-            walls,
+            _walls: walls,
             track,
-            _start: start,
-            _end: end,
             cols,
             rows,
         }
@@ -107,38 +121,54 @@ impl From<&str> for Race {
 }
 
 impl Race {
-    fn valid_cheat(&self, (wall_col, wall_row): &(usize, usize)) -> Vec<Cheat> {
-        let horizontal_cheat = if !self.walls.contains(&(wall_col - 1, *wall_row))
-            && !self.walls.contains(&(wall_col + 1, *wall_row))
-        {
-            Some(Cheat::new(
-                (wall_col - 1, *wall_row),
-                (wall_col + 1, *wall_row),
-            ))
-        } else {
-            None
-        };
-        let vertical_cheat = if !self.walls.contains(&(*wall_col, wall_row - 1))
-            && !self.walls.contains(&(*wall_col, wall_row + 1))
-        {
-            Some(Cheat::new(
-                (*wall_col, wall_row - 1),
-                (*wall_col, wall_row + 1),
-            ))
-        } else {
-            None
-        };
-        let result = vec![horizontal_cheat, vertical_cheat];
-        result.into_iter().filter_map(|cheat| cheat).collect()
+    fn cheats(&self, (from_col, from_row): (usize, usize), duration: usize) -> Vec<Cheat> {
+        let duration: isize = duration as isize;
+        (-duration as isize..=duration)
+            .flat_map(|delta_row| {
+                (-duration as isize..=duration)
+                    .filter_map(|delta_col| {
+                        if (delta_col, delta_row) != (-1, 0)
+                            && (delta_col, delta_row) != (1, 0)
+                            && (delta_col, delta_row) != (0, -1)
+                            && (delta_col, delta_row) != (0, 1)
+                            && (delta_col, delta_row) != (0, 0)
+                        {
+                            Some((delta_col, delta_row))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .map(|(delta_col, delta_row)| {
+                (from_col as isize + delta_col, from_row as isize + delta_row)
+            })
+            .filter_map(|(col, row)| {
+                if col >= 0 && row >= 0 {
+                    Some((col as usize, row as usize))
+                } else {
+                    None
+                }
+            })
+            .filter(|(col, row)| *col < self.cols && *row < self.rows)
+            .filter(|tile| distance((from_col, from_row), *tile) <= duration as usize)
+            .filter(|tile| self.track.contains(tile))
+            .filter(|&tile| {
+                self.track.iter().position(|&t| t == (from_col, from_row))
+                    < self.track.iter().position(|&t| t == tile)
+            })
+            .map(|tile| Cheat::new((from_col, from_row), tile))
+            .collect()
     }
 
-    fn find_valid_cheats(&self) -> HashMap<usize, usize> {
-        let cheats = self
-            .walls
+    fn find_valid_cheats(&self, duration: usize) -> HashMap<usize, usize> {
+        let mut cheats = self
+            .track
             .iter()
-            .filter(|(col, row)| *col > 0 && *col < self.cols && *row > 0 && *row < self.rows)
-            .flat_map(|tile| self.valid_cheat(tile))
+            .flat_map(|&tile| self.cheats(tile, duration))
             .collect::<Vec<_>>();
+        cheats.sort_unstable();
+        cheats.dedup();
         cheats
             .iter()
             .fold(HashMap::new(), |mut cheat_saving, cheat| {
@@ -146,14 +176,16 @@ impl Race {
                 let idx_start = self.track.iter().position(|&tile| tile == start).unwrap();
                 let idx_end = self.track.iter().position(|&tile| tile == end).unwrap();
                 let saved_ps = if idx_start > idx_end {
-                    idx_start - idx_end - 2
+                    idx_start - idx_end - distance(start, end)
                 } else {
-                    idx_end - idx_start - 2
+                    idx_end - idx_start - distance(start, end)
                 };
-                cheat_saving
-                    .entry(saved_ps)
-                    .and_modify(|num_tracks| *num_tracks += 1)
-                    .or_insert(1);
+                if saved_ps > 0 {
+                    cheat_saving
+                        .entry(saved_ps)
+                        .and_modify(|num_tracks| *num_tracks += 1)
+                        .or_insert(1);
+                }
                 cheat_saving
             })
     }
@@ -162,9 +194,18 @@ impl Race {
 fn main() {
     let input = read_input("day20.txt");
     let race = Race::from(input.as_str());
-    let saved_ps = race.find_valid_cheats();
+    let saved_ps = race.find_valid_cheats(2);
     println!(
         "Part 1 = {}",
+        saved_ps
+            .iter()
+            .filter(|(&ps, _)| ps >= 100)
+            .map(|(_, num)| num)
+            .sum::<usize>()
+    );
+    let saved_ps = race.find_valid_cheats(20);
+    println!(
+        "Part 2 = {}",
         saved_ps
             .iter()
             .filter(|(&ps, _)| ps >= 100)
@@ -199,62 +240,6 @@ mod day20_tests {
     }
 
     #[test]
-    fn test_valid_cheats() {
-        let input = r#"###############
-#...#...#.....#
-#.#.#.#.#.###.#
-#S#...#.#.#...#
-#######.#.#.###
-#######.#.#...#
-#######.#.###.#
-###..E#...#...#
-###.#######.###
-#...###...#...#
-#.#####.#.###.#
-#.#...#.#.#...#
-#.#.#.#.#.#.###
-#...#...#...###
-###############"#;
-        let race = Race::from(input);
-        assert_eq!(
-            race.valid_cheat(&(4, 1)),
-            vec![Cheat {
-                start: (3, 1),
-                end: (5, 1)
-            }]
-        );
-        assert_eq!(race.valid_cheat(&(10, 2)), vec![]);
-        assert_eq!(
-            race.valid_cheat(&(8, 13)),
-            vec![Cheat {
-                start: (7, 13),
-                end: (9, 13)
-            }]
-        );
-        assert_eq!(
-            race.valid_cheat(&(8, 3)),
-            vec![Cheat {
-                start: (7, 3),
-                end: (9, 3)
-            }]
-        );
-        assert_eq!(
-            race.valid_cheat(&(3, 10)),
-            vec![Cheat {
-                start: (3, 9),
-                end: (3, 11)
-            }]
-        );
-        assert_eq!(
-            race.valid_cheat(&(10, 3)),
-            vec![Cheat {
-                start: (9, 3),
-                end: (11, 3)
-            }]
-        );
-    }
-
-    #[test]
     fn test_find_valid_cheats() {
         let input = r#"###############
 #...#...#.....#
@@ -272,7 +257,7 @@ mod day20_tests {
 #...#...#...###
 ###############"#;
         let race = Race::from(input);
-        assert_eq!(race.find_valid_cheats().values().sum::<usize>(), 44);
+        assert_eq!(race.find_valid_cheats(2).values().sum::<usize>(), 44);
     }
 
     #[test]
@@ -293,7 +278,7 @@ mod day20_tests {
 #...#...#...###
 ###############"#;
         let race = Race::from(input);
-        let saved_ps = race.find_valid_cheats();
+        let saved_ps = race.find_valid_cheats(2);
         assert_eq!(saved_ps.get(&2).unwrap(), &14);
         assert_eq!(saved_ps.get(&4).unwrap(), &14);
         assert_eq!(saved_ps.get(&6).unwrap(), &2);
@@ -305,5 +290,40 @@ mod day20_tests {
         assert_eq!(saved_ps.get(&38).unwrap(), &1);
         assert_eq!(saved_ps.get(&40).unwrap(), &1);
         assert_eq!(saved_ps.get(&64).unwrap(), &1);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"###############
+#...#...#.....#
+#.#.#.#.#.###.#
+#S#...#.#.#...#
+#######.#.#.###
+#######.#.#...#
+#######.#.###.#
+###..E#...#...#
+###.#######.###
+#...###...#...#
+#.#####.#.###.#
+#.#...#.#.#...#
+#.#.#.#.#.#.###
+#...#...#...###
+###############"#;
+        let race = Race::from(input);
+        let saved_ps = race.find_valid_cheats(20);
+        assert_eq!(saved_ps.get(&50).unwrap(), &32);
+        assert_eq!(saved_ps.get(&52).unwrap(), &31);
+        assert_eq!(saved_ps.get(&54).unwrap(), &29);
+        assert_eq!(saved_ps.get(&56).unwrap(), &39);
+        assert_eq!(saved_ps.get(&58).unwrap(), &25);
+        assert_eq!(saved_ps.get(&60).unwrap(), &23);
+        assert_eq!(saved_ps.get(&62).unwrap(), &20);
+        assert_eq!(saved_ps.get(&64).unwrap(), &19);
+        assert_eq!(saved_ps.get(&66).unwrap(), &12);
+        assert_eq!(saved_ps.get(&68).unwrap(), &14);
+        assert_eq!(saved_ps.get(&70).unwrap(), &12);
+        assert_eq!(saved_ps.get(&72).unwrap(), &22);
+        assert_eq!(saved_ps.get(&74).unwrap(), &4);
+        assert_eq!(saved_ps.get(&76).unwrap(), &3);
     }
 }
