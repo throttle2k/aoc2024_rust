@@ -1,0 +1,11 @@
+[package]
+name = "day22"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+common.workspace = true
+itertools.workspace = true
+
+[dev-dependencies]
+parameterized.workspace = true
