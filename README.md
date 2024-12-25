@@ -22,4 +22,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 18: RAM Run
 - [x] Day 19: Linen Layout
 - [x] Day 20: Race Condition
-- [ ] Day 21: Keypad Conundrum
+- [x] Day 21: Keypad Conundrum

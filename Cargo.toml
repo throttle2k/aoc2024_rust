@@ -3,5 +3,6 @@ members = ["days/day01", "days/day02", "days/day03", "days/day04", "days/day05",
 resolver = "2"
 
 [workspace.dependencies]
+itertools = "0.13.0"
 parameterized = "2.0.0"
 common = { path = "common"}

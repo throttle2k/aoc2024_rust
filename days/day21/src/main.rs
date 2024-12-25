@@ -1,27 +1,36 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap, HashSet},
-    usize,
-};
+use std::{collections::HashMap, usize};
 
 use common::read_input;
+use itertools::Itertools;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, PartialEq, Clone)]
 enum Direction {
     Up,
+    Right,
     Down,
     Left,
-    Right,
     Press,
+}
+
+impl Direction {
+    fn reverse(&self) -> Self {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Right => Direction::Left,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Press => panic!("Cannot undo press"),
+        }
+    }
 }
 
 impl ToString for Direction {
     fn to_string(&self) -> String {
         match self {
             Direction::Up => String::from("^"),
+            Direction::Right => String::from(">"),
             Direction::Down => String::from("v"),
             Direction::Left => String::from("<"),
-            Direction::Right => String::from(">"),
             Direction::Press => String::from("A"),
         }
     }
@@ -29,9 +38,9 @@ impl ToString for Direction {
 
 #[derive(Debug)]
 struct Edge {
-    direction: Direction,
     from: char,
     to: char,
+    direction: Direction,
 }
 
 impl Edge {
@@ -44,374 +53,314 @@ impl Edge {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-struct State {
-    directions: Vec<Direction>,
-    current: char,
-    remaining_index: usize, // Instead of storing the whole Vec
-    current_distance: usize,
+fn compute_min_paths(edges: &[Edge]) -> HashMap<(char, char), Vec<Vec<Direction>>> {
+    let mut min_paths = HashMap::new();
+    let keys = edges.iter().map(|e| e.from).collect::<Vec<_>>();
+    keys.iter()
+        .cartesian_product(keys.clone())
+        .for_each(|(from, to)| {
+            let path = compute_min_path(*from, to, edges, &min_paths);
+            let reverse_path = path
+                .iter()
+                .filter(|p| !p.is_empty())
+                .map(|p| {
+                    p.iter()
+                        .cloned()
+                        .rev()
+                        .map(|d| d.reverse())
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+            min_paths.insert((*from, to), path);
+            min_paths.insert((to, *from), reverse_path);
+            min_paths.insert((*from, *from), vec![vec![]]);
+            min_paths.insert((to, to), vec![vec![]]);
+        });
+
+    min_paths
 }
 
-impl Ord for State {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.current_distance.cmp(&other.current_distance)
-    }
+fn neighbors(key: char, edges: &[Edge]) -> Vec<&Edge> {
+    edges.iter().filter(|e| e.from == key).collect()
 }
 
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
+fn compute_min_path(
+    from: char,
+    to: char,
+    edges: &[Edge],
+    memo: &HashMap<(char, char), Vec<Vec<Direction>>>,
+) -> Vec<Vec<Direction>> {
+    let mut result = vec![vec![]];
+    let mut queue = vec![(vec![], from)];
+    let mut min_length = usize::max_value();
 
-impl State {
-    fn new(
-        directions: Vec<Direction>,
-        current: char,
-        remaining_index: usize,
-        output: &str,
-        distances: &HashMap<(char, char), usize>,
-    ) -> Self {
-        let current_distance = if remaining_index < output.len() {
-            *distances
-                .get(&(current, output.chars().nth(remaining_index).unwrap()))
-                .unwrap_or(&0)
-                + directions.len()
-        } else {
-            directions.len()
-        };
-
-        Self {
-            directions,
-            current,
-            remaining_index,
-            current_distance,
+    while !queue.is_empty() {
+        let (current_directions, current_key) = queue.remove(0);
+        if current_directions.len() > min_length {
+            continue;
         }
+        if let Some(directions) = memo.get(&(current_key, to)) {
+            let mut paths: Vec<Vec<Direction>> = directions
+                .iter()
+                .cloned()
+                .map(|old_path| {
+                    let mut new_directions = current_directions.clone();
+                    new_directions.extend(old_path);
+                    new_directions
+                })
+                .collect::<Vec<_>>();
+            let paths_min_length = paths
+                .iter()
+                .map(|d| d.len())
+                .min()
+                .unwrap_or(usize::max_value());
+            if paths_min_length < min_length {
+                min_length = paths_min_length;
+                result.clear();
+            }
+            paths = paths
+                .iter()
+                .cloned()
+                .filter(|d| d.len() == paths_min_length)
+                .collect();
+            result.extend(paths);
+            continue;
+        }
+        if current_key == to {
+            if current_directions.len() < min_length {
+                min_length = current_directions.len();
+                result.clear();
+            }
+            result.push(current_directions);
+            continue;
+        }
+        neighbors(current_key, edges).iter().for_each(|neighbor| {
+            let mut next_directions = current_directions.clone();
+            next_directions.push(neighbor.direction.clone());
+            let next_key = neighbor.to.clone();
+            queue.push((next_directions, next_key));
+        });
     }
+    result
 }
 
 #[derive(Debug)]
-struct Keyboard {
-    edges: Vec<Edge>,
-    distances: HashMap<(char, char), usize>,
+struct Keypad {
+    min_paths: HashMap<(char, char), Vec<Vec<Direction>>>,
 }
 
-impl Keyboard {
+impl Keypad {
     fn new(edges: Vec<Edge>) -> Self {
-        let keys: HashSet<char> = edges
-            .iter()
-            .flat_map(
-                |&Edge {
-                     from,
-                     to,
-                     direction: _,
-                 }| vec![from, to],
-            )
-            .collect();
-        let mut distances = HashMap::new();
-
-        for &from in &keys {
-            for &to in &keys {
-                if from == to {
-                    distances.insert((from, to), 0);
-                } else {
-                    distances.insert((from, to), usize::MAX);
-                }
-            }
-        }
-
-        for &Edge {
-            from,
-            to,
-            direction: _,
-        } in &edges
-        {
-            distances.insert((from, to), 1);
-        }
-
-        for &k in &keys {
-            for &i in &keys {
-                for &j in &keys {
-                    if let Some(&d_ik) = distances.get(&(i, k)) {
-                        if let Some(&d_kj) = distances.get(&(k, j)) {
-                            let d_ij = distances.get(&(i, j)).unwrap_or(&usize::MAX);
-                            if d_ik != usize::MAX && d_kj != usize::MAX {
-                                distances.insert((i, j), d_ik.saturating_add(d_kj).min(*d_ij));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Self { edges, distances }
+        let min_paths = compute_min_paths(&edges);
+        Self { min_paths }
     }
 
     fn new_numeric() -> Self {
-        let edge78 = Edge::new('7', '8', Direction::Right);
-        let edge74 = Edge::new('7', '4', Direction::Down);
-        let edge87 = Edge::new('8', '7', Direction::Left);
-        let edge85 = Edge::new('8', '5', Direction::Down);
-        let edge89 = Edge::new('8', '9', Direction::Right);
-        let edge98 = Edge::new('9', '8', Direction::Left);
-        let edge96 = Edge::new('9', '6', Direction::Down);
-        let edge47 = Edge::new('4', '7', Direction::Up);
-        let edge45 = Edge::new('4', '5', Direction::Right);
-        let edge41 = Edge::new('4', '1', Direction::Down);
-        let edge54 = Edge::new('5', '4', Direction::Left);
-        let edge58 = Edge::new('5', '8', Direction::Up);
-        let edge56 = Edge::new('5', '6', Direction::Right);
-        let edge52 = Edge::new('5', '2', Direction::Down);
-        let edge65 = Edge::new('6', '5', Direction::Left);
-        let edge69 = Edge::new('6', '9', Direction::Up);
-        let edge63 = Edge::new('6', '3', Direction::Down);
-        let edge14 = Edge::new('1', '4', Direction::Up);
-        let edge12 = Edge::new('1', '2', Direction::Right);
-        let edge21 = Edge::new('2', '1', Direction::Left);
-        let edge25 = Edge::new('2', '5', Direction::Up);
-        let edge23 = Edge::new('2', '3', Direction::Right);
-        let edge20 = Edge::new('2', '0', Direction::Down);
-        let edge32 = Edge::new('3', '2', Direction::Left);
-        let edge36 = Edge::new('3', '6', Direction::Up);
-        let edge3a = Edge::new('3', 'A', Direction::Down);
-        let edge02 = Edge::new('0', '2', Direction::Up);
-        let edge0a = Edge::new('0', 'A', Direction::Right);
-        let edgea0 = Edge::new('A', '0', Direction::Left);
-        let edgea3 = Edge::new('A', '3', Direction::Up);
-        let edges = vec![
-            edgea0, edgea3, edge0a, edge02, edge12, edge14, edge20, edge21, edge23, edge25, edge3a,
-            edge32, edge36, edge41, edge45, edge47, edge52, edge54, edge56, edge58, edge63, edge65,
-            edge69, edge74, edge78, edge85, edge87, edge89, edge96, edge98,
-        ];
+        let mut edges = vec![];
+        edges.push(Edge::new('7', '8', Direction::Right));
+        edges.push(Edge::new('7', '4', Direction::Down));
+        edges.push(Edge::new('8', '7', Direction::Left));
+        edges.push(Edge::new('8', '5', Direction::Down));
+        edges.push(Edge::new('8', '9', Direction::Right));
+        edges.push(Edge::new('9', '8', Direction::Left));
+        edges.push(Edge::new('9', '6', Direction::Down));
+        edges.push(Edge::new('4', '7', Direction::Up));
+        edges.push(Edge::new('4', '5', Direction::Right));
+        edges.push(Edge::new('4', '1', Direction::Down));
+        edges.push(Edge::new('5', '4', Direction::Left));
+        edges.push(Edge::new('5', '8', Direction::Up));
+        edges.push(Edge::new('5', '6', Direction::Right));
+        edges.push(Edge::new('5', '2', Direction::Down));
+        edges.push(Edge::new('6', '5', Direction::Left));
+        edges.push(Edge::new('6', '9', Direction::Up));
+        edges.push(Edge::new('6', '3', Direction::Down));
+        edges.push(Edge::new('1', '4', Direction::Up));
+        edges.push(Edge::new('1', '2', Direction::Right));
+        edges.push(Edge::new('2', '1', Direction::Left));
+        edges.push(Edge::new('2', '5', Direction::Up));
+        edges.push(Edge::new('2', '3', Direction::Right));
+        edges.push(Edge::new('2', '0', Direction::Down));
+        edges.push(Edge::new('3', '2', Direction::Left));
+        edges.push(Edge::new('3', '6', Direction::Up));
+        edges.push(Edge::new('3', 'A', Direction::Down));
+        edges.push(Edge::new('0', '2', Direction::Up));
+        edges.push(Edge::new('0', 'A', Direction::Right));
+        edges.push(Edge::new('A', '0', Direction::Left));
+        edges.push(Edge::new('A', '3', Direction::Up));
         Self::new(edges)
     }
 
     fn new_directional() -> Self {
-        let edgeua = Edge::new('^', 'A', Direction::Right);
-        let edgeud = Edge::new('^', 'v', Direction::Down);
-        let edgeau = Edge::new('A', '^', Direction::Left);
-        let edgear = Edge::new('A', '>', Direction::Down);
-        let edgeld = Edge::new('<', 'v', Direction::Right);
-        let edgedl = Edge::new('v', '<', Direction::Left);
-        let edgedu = Edge::new('v', '^', Direction::Up);
-        let edgedr = Edge::new('v', '>', Direction::Right);
-        let edgerd = Edge::new('>', 'v', Direction::Left);
-        let edgera = Edge::new('>', 'A', Direction::Up);
-        let edges = vec![
-            edgeua, edgeud, edgeau, edgear, edgeld, edgedl, edgedu, edgedr, edgerd, edgera,
-        ];
+        let mut edges = vec![];
+        edges.push(Edge::new('^', 'A', Direction::Right));
+        edges.push(Edge::new('^', 'v', Direction::Down));
+        edges.push(Edge::new('A', '^', Direction::Left));
+        edges.push(Edge::new('A', '>', Direction::Down));
+        edges.push(Edge::new('<', 'v', Direction::Right));
+        edges.push(Edge::new('v', '<', Direction::Left));
+        edges.push(Edge::new('v', '^', Direction::Up));
+        edges.push(Edge::new('v', '>', Direction::Right));
+        edges.push(Edge::new('>', 'v', Direction::Left));
+        edges.push(Edge::new('>', 'A', Direction::Up));
         Self::new(edges)
     }
 
-    fn neighbors(&self, key: char) -> Vec<&Edge> {
-        self.edges.iter().filter(|edge| edge.from == key).collect()
-    }
-
-    fn find_sequence(&self, output: &str) -> Vec<Vec<Direction>> {
-        let mut queue = BinaryHeap::new();
-        let mut visited = HashMap::new();
-        let output_chars: Vec<char> = output.chars().collect();
-        let state = State::new(vec![], 'A', 0, output, &self.distances);
-
-        let mut results = Vec::new();
-        let mut min_length = usize::MAX;
-
-        // Initialize with first state
-        visited.insert((state.current, 0), HashSet::from([0])); // Track set of lengths for each state
-        queue.push(Reverse(state));
-
-        while let Some(Reverse(State {
-            directions,
-            current,
-            remaining_index,
-            current_distance: _,
-        })) = queue.pop()
-        {
-            if !remaining_index < output_chars.len() && directions.len() >= min_length {
-                continue;
-            }
-
-            if remaining_index >= output_chars.len() {
-                if directions.len() <= min_length {
-                    if directions.len() < min_length {
-                        min_length = directions.len();
-                        results.clear();
-                    }
-                    results.push(directions);
-                }
-                continue;
-            }
-
-            let target_char = output_chars[remaining_index];
-
-            if current == target_char {
-                let mut new_directions = directions.clone();
-                new_directions.push(Direction::Press);
-                let new_state = State::new(
-                    new_directions,
-                    current,
-                    remaining_index + 1,
-                    output,
-                    &self.distances,
-                );
-
-                let lengths = visited
-                    .entry((new_state.current, remaining_index + 1))
-                    .or_insert_with(HashSet::new);
-
-                // Add this path if it's not longer than any we've seen
-                if new_state.directions.len() <= min_length
-                    && !lengths.iter().any(|&l| l < new_state.directions.len())
-                {
-                    lengths.insert(new_state.directions.len());
-                    queue.push(Reverse(new_state));
-                }
-            }
-
-            for Edge { to, direction, .. } in self.neighbors(current) {
-                let mut new_directions = directions.clone();
-                new_directions.push(direction.clone());
-
-                if new_directions.len() < min_length {
-                    let next_state = State::new(
-                        new_directions,
-                        *to,
-                        remaining_index,
-                        output,
-                        &self.distances,
-                    );
-
-                    let lengths = visited
-                        .entry((next_state.current, remaining_index))
-                        .or_insert_with(HashSet::new);
-
-                    // Add this path if it's not longer than any we've seen
-                    if !lengths.iter().any(|&l| l < next_state.directions.len()) {
-                        lengths.insert(next_state.directions.len());
-                        queue.push(Reverse(next_state));
-                    }
-                }
-            }
+    fn find_shortest_sequence(
+        &self,
+        target: &str,
+        depth: usize,
+        memo: &mut HashMap<(String, usize), usize>,
+    ) -> usize {
+        if let Some(length) = memo.get(&(target.to_string(), depth)) {
+            return *length;
         }
-
-        results
+        let min_length = format!("A{target}")
+            .chars()
+            .tuple_windows()
+            .map(|(from, to)| {
+                let shortest_paths = self.min_paths.get(&(from, to)).unwrap();
+                let min_length = match depth {
+                    0 => shortest_paths[0].len() + 1,
+                    _ => shortest_paths
+                        .iter()
+                        .cloned()
+                        .map(|mut path| {
+                            path.push(Direction::Press);
+                            let path = path.iter().map(|d| d.to_string()).collect::<String>();
+                            Keypad::new_directional().find_shortest_sequence(&path, depth - 1, memo)
+                        })
+                        .min()
+                        .unwrap(),
+                };
+                min_length
+            })
+            .sum::<usize>();
+        memo.insert((target.to_string(), depth), min_length);
+        min_length
     }
-}
 
-fn find_complexity(output: &str) -> usize {
-    let numeric_code = output
-        .chars()
-        .take_while(|c| c.is_numeric())
-        .collect::<String>()
-        .parse::<usize>()
-        .unwrap();
-    let keyboard_depressurized = Keyboard::new_numeric();
-    let depressurized = keyboard_depressurized.find_sequence(output);
-    let depressurized = depressurized
-        .iter()
-        .map(|seq| seq.iter().map(|d| d.to_string()).collect::<String>())
-        .collect::<Vec<_>>();
-    let depressurized_min_length = depressurized.iter().map(|s| s.len()).min().unwrap();
-    let depressurized = depressurized
-        .iter()
-        .filter(|s| s.len() == depressurized_min_length)
-        .collect::<Vec<_>>();
-    let radiation = depressurized
-        .iter()
-        .flat_map(|output| {
-            let keyboard_radiation = Keyboard::new_directional();
-            let radiation = keyboard_radiation.find_sequence(output);
-            radiation
-                .iter()
-                .map(|seq| seq.iter().map(|d| d.to_string()).collect::<String>())
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    let radiation_min_length = radiation.iter().map(|s| s.len()).min().unwrap();
-    let radiation = radiation
-        .iter()
-        .filter(|s| s.len() == radiation_min_length)
-        .collect::<Vec<_>>();
-    let freezing = radiation
-        .iter()
-        .flat_map(|output| {
-            let keyboard_freezing = Keyboard::new_directional();
-            let freezing = keyboard_freezing.find_sequence(output);
-            freezing
-                .iter()
-                .map(|seq| seq.iter().map(|d| d.to_string()).collect::<String>())
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    let freezing_min_length = freezing.iter().map(|s| s.len()).min().unwrap();
-    let freezing = freezing
-        .iter()
-        .filter(|s| s.len() == freezing_min_length)
-        .collect::<Vec<_>>();
-    freezing.get(0).unwrap().len() * numeric_code
+    fn calculate_complexity(&self, input: &str, num_robot_stages: usize) -> usize {
+        self.find_shortest_sequence(input, num_robot_stages, &mut HashMap::new())
+            * input.trim_end_matches('A').parse::<usize>().unwrap()
+    }
+
+    fn calculate_total_complexity(&self, input: &str, num_robot_stages: usize) -> usize {
+        input
+            .trim()
+            .lines()
+            .map(|l| self.calculate_complexity(l, num_robot_stages))
+            .sum()
+    }
 }
 
 fn main() {
     let input = read_input("day21.txt");
-    let outputs = input.trim().lines().collect::<Vec<_>>();
-    let total_complexity = outputs
-        .iter()
-        .map(|output| find_complexity(output))
-        .sum::<usize>();
-    println!("Part 1 = {}", total_complexity);
+    let keypad = Keypad::new_numeric();
+    println!(
+        "Part 1 = {}",
+        keypad.calculate_total_complexity(input.as_str(), 2)
+    );
+    println!(
+        "Part 2 = {}",
+        keypad.calculate_total_complexity(input.as_str(), 25)
+    );
 }
 
 #[cfg(test)]
 mod day21_tests {
-    use parameterized::parameterized;
-
     use super::*;
 
     #[test]
-    fn test_find_sequences_depressurized() {
-        let output = "029A";
-        let keyboard = Keyboard::new_numeric();
-        let sequences = keyboard.find_sequence(output);
-        let sequences = sequences
-            .iter()
-            .map(|s| s.iter().map(|d| d.to_string()).collect::<String>())
-            .collect::<Vec<_>>();
-        assert!(sequences.iter().any(|s| s == "<A^A>^^AvvvA"));
+    fn test_numeric_keypad() {
+        let keypad = Keypad::new_numeric();
+        assert_eq!(
+            keypad.min_paths.get(&('A', '0')),
+            Some(vec![vec![Direction::Left]].as_ref())
+        );
+        let paths_0_9 = keypad.min_paths.get(&('0', '9'));
+        assert!(paths_0_9.is_some());
+        let paths_0_9 = paths_0_9.unwrap();
+        assert_eq!(paths_0_9.len(), 4);
+        assert!(paths_0_9.contains(
+            vec![
+                Direction::Up,
+                Direction::Up,
+                Direction::Up,
+                Direction::Right,
+            ]
+            .as_ref()
+        ));
+        assert!(paths_0_9.contains(
+            vec![
+                Direction::Up,
+                Direction::Up,
+                Direction::Right,
+                Direction::Up,
+            ]
+            .as_ref()
+        ));
+        assert!(paths_0_9.contains(
+            vec![
+                Direction::Up,
+                Direction::Right,
+                Direction::Up,
+                Direction::Up,
+            ]
+            .as_ref()
+        ));
+        assert!(paths_0_9.contains(
+            vec![
+                Direction::Right,
+                Direction::Up,
+                Direction::Up,
+                Direction::Up,
+            ]
+            .as_ref()
+        ));
     }
 
     #[test]
-    fn test_find_sequences_radiation() {
-        let output = "<A^A>^^AvvvA";
-        let keyboard = Keyboard::new_directional();
-        let sequences = keyboard.find_sequence(output);
-        let sequences = sequences
-            .iter()
-            .map(|s| s.iter().map(|d| d.to_string()).collect::<String>())
-            .collect::<Vec<_>>();
-        assert!(sequences
-            .iter()
-            .any(|s| s == "v<<A>>^A<A>AvA<^AA>A<vAAA>^A"));
+    fn test_directional_keypad() {
+        let keypad = Keypad::new_directional();
+        assert_eq!(
+            keypad.min_paths.get(&('A', '^')),
+            Some(vec![vec![Direction::Left]].as_ref())
+        );
+        let paths_l_a = keypad.min_paths.get(&('<', 'A'));
+        assert!(paths_l_a.is_some());
+        let paths_l_a = paths_l_a.unwrap();
+        assert_eq!(paths_l_a.len(), 2);
+        assert!(
+            paths_l_a.contains(vec![Direction::Right, Direction::Right, Direction::Up,].as_ref())
+        );
+        assert!(
+            paths_l_a.contains(vec![Direction::Right, Direction::Up, Direction::Right,].as_ref())
+        );
     }
 
-    #[parameterized]
-    fn test_find_sequences_freezing() {
-        let output = "v<<A>>^A<A>AvA<^AA>A<vAAA>^A";
-        let keyboard = Keyboard::new_directional();
-        let sequences = keyboard.find_sequence(output);
-        let sequences = sequences
-            .iter()
-            .map(|s| s.iter().map(|d| d.to_string()).collect::<String>())
-            .collect::<Vec<_>>();
-        assert!(sequences
-            .iter()
-            .any(|s| s == "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"));
+    #[test]
+    fn test_find_seq_lengths() {
+        let input = "029A";
+        let keypad = Keypad::new_numeric();
+        let min_length = keypad.find_shortest_sequence(input, 2, &mut HashMap::new());
+        assert_eq!(min_length, 68);
     }
 
-    #[parameterized(
-        output = { "029A", "980A", "179A", "456A", "379A" },
-        expected = { 68*29, 60*980, 68*179, 64*456, 64*379 }
-    )]
-    fn part1(output: &str, expected: usize) {
-        assert_eq!(find_complexity(output), expected);
+    #[test]
+    fn test_calculate_complexity() {
+        let input = "029A";
+        let keypad = Keypad::new_numeric();
+        assert_eq!(keypad.calculate_complexity(input, 2), 68 * 29);
+    }
+
+    #[test]
+    fn part1() {
+        let input = r#"029A
+980A
+179A
+456A
+379A"#;
+        let keypad = Keypad::new_numeric();
+        assert_eq!(keypad.calculate_total_complexity(input, 2), 126384);
     }
 }
