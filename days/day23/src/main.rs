@@ -1,8 +1,20 @@
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
+
 use common::read_input;
 use itertools::Itertools;
 
-#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
 struct Computer(String);
+
+impl ToString for Computer {
+    fn to_string(&self) -> String {
+        let Computer(name) = self;
+        name.to_string()
+    }
+}
 
 impl Computer {
     fn name_starts_with(&self, letter: &str) -> bool {
@@ -11,7 +23,7 @@ impl Computer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Connection {
     from: Computer,
     to: Vec<Computer>,
@@ -41,9 +53,9 @@ impl From<&str> for Lan {
             let reverse = format!("{to}-{from}");
             let reverse = Connection::from(reverse.as_str());
             if let Some(connection) = connections.iter_mut().find(|c| c.from == direct.from) {
-                connection.to.extend(direct.to);
+                connection.to.extend(direct.to.clone());
             } else {
-                connections.push(direct);
+                connections.push(direct.clone());
             }
             if let Some(connection) = connections.iter_mut().find(|c| c.from == reverse.from) {
                 connection.to.extend(reverse.to);
@@ -100,6 +112,66 @@ impl Lan {
             .filter(|comps| comps.iter().any(|c| c.name_starts_with(letter)))
             .collect::<Vec<_>>()
     }
+
+    fn find_maximal_cliques(&self) -> Vec<HashSet<Computer>> {
+        let mut graph: HashMap<Computer, HashSet<Computer>> = HashMap::new();
+        self.connections.iter().cloned().for_each(|connection| {
+            for to in connection.to {
+                let from = connection.from.clone();
+                graph
+                    .entry(from.clone())
+                    .and_modify(|set| {
+                        set.insert(to.clone());
+                    })
+                    .or_insert(HashSet::from_iter(vec![to.clone()]));
+                graph
+                    .entry(to)
+                    .and_modify(|set| {
+                        set.insert(from.clone());
+                    })
+                    .or_insert(HashSet::from_iter(vec![from]));
+            }
+        });
+        let mut cliques = Vec::new();
+        let nodes = graph.keys().cloned().collect();
+        bron_kerbosch(HashSet::new(), nodes, HashSet::new(), &graph, &mut cliques);
+        cliques
+    }
+
+    fn find_password(&self) -> String {
+        let cliques = self.find_maximal_cliques();
+        let max_clique = cliques.iter().max_by_key(|set| set.len()).unwrap();
+        let mut as_vec = max_clique.iter().collect::<Vec<_>>();
+        as_vec.sort();
+        as_vec.iter().map(|&c| c.to_string()).join(",")
+    }
+}
+
+fn bron_kerbosch<T>(
+    r: HashSet<T>,
+    mut p: HashSet<T>,
+    mut x: HashSet<T>,
+    graph: &HashMap<T, HashSet<T>>,
+    cliques: &mut Vec<HashSet<T>>,
+) where
+    T: Clone + Eq + Hash,
+{
+    if p.is_empty() && x.is_empty() {
+        cliques.push(r);
+        return;
+    }
+    p.clone().iter().for_each(|node| {
+        let mut new_r = r.clone();
+        new_r.insert(node.clone());
+
+        let new_p = p.intersection(&graph[&node]).cloned().collect();
+        let new_x = x.intersection(&graph[&node]).cloned().collect();
+
+        bron_kerbosch(new_r, new_p, new_x, graph, cliques);
+
+        p.remove(&node);
+        x.insert(node.clone());
+    });
 }
 
 fn main() {
@@ -109,6 +181,7 @@ fn main() {
         "Part 1 = {}",
         lan.find_triple_connections_with_letter("t").len()
     );
+    println!("Part 2 = {}", lan.find_password());
 }
 
 #[cfg(test)]
@@ -189,5 +262,43 @@ tb-vc
 td-yn"#;
         let lan = Lan::from(input);
         assert_eq!(lan.find_triple_connections_with_letter("t").len(), 7);
+    }
+
+    #[test]
+    fn part2() {
+        let input = r#"kh-tc
+qp-kh
+de-cg
+ka-co
+yn-aq
+qp-ub
+cg-tb
+vc-aq
+tb-ka
+wh-tc
+yn-cg
+kh-ub
+ta-co
+de-co
+tc-td
+tb-wq
+wh-td
+ta-ka
+td-qp
+aq-cg
+wq-ub
+ub-vc
+de-ta
+wq-aq
+wq-vc
+wh-yn
+ka-de
+kh-ta
+co-tc
+wh-qp
+tb-vc
+td-yn"#;
+        let lan = Lan::from(input);
+        assert_eq!(lan.find_password(), "co,de,ka,ta");
     }
 }
