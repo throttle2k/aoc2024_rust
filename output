@@ -1,0 +1,852 @@
+warning: unused import: `itertools::Itertools`
+ --> days/day24/src/main.rs:3:5
+  |
+3 | use itertools::Itertools;
+  |     ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: method `get_z_value` is never used
+   --> days/day24/src/main.rs:181:8
+    |
+147 | impl Circuit {
+    | ------------ method in this implementation
+...
+181 |     fn get_z_value(&self) -> usize {
+    |        ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `day24` (bin "day24" test) generated 2 warnings (run `cargo fix --bin "day24" --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/common-4bd2cd04476e07d8)
+     Running unittests src/main.rs (target/debug/deps/day01-99814a74c5b44f71)
+     Running unittests src/main.rs (target/debug/deps/day02-54b99477fe6f8977)
+     Running unittests src/main.rs (target/debug/deps/day03-57878e98b0b21613)
+     Running unittests src/main.rs (target/debug/deps/day04-a55e018371c2e740)
+     Running unittests src/main.rs (target/debug/deps/day05-0c3b60f1de8c5b19)
+     Running unittests src/main.rs (target/debug/deps/day06-883b9b8a26b9994c)
+     Running unittests src/main.rs (target/debug/deps/day07-e134411c72b1224c)
+     Running unittests src/main.rs (target/debug/deps/day08-9aab19d66b29720f)
+     Running unittests src/main.rs (target/debug/deps/day09-b2f75233b2b24444)
+     Running unittests src/main.rs (target/debug/deps/day10-243c7525da7d686d)
+     Running unittests src/main.rs (target/debug/deps/day11-5462e2803aea01ac)
+     Running unittests src/main.rs (target/debug/deps/day12-5062b1f1ed11c9d7)
+     Running unittests src/main.rs (target/debug/deps/day13-2cfa69994cdffc9b)
+     Running unittests src/main.rs (target/debug/deps/day14-6a03d93143ca8ef3)
+     Running unittests src/main.rs (target/debug/deps/day15-a0e9fbffbcccf1bb)
+     Running unittests src/main.rs (target/debug/deps/day16-239d47126bf2ed82)
+     Running unittests src/main.rs (target/debug/deps/day17-3f906859cc34e46b)
+     Running unittests src/main.rs (target/debug/deps/day18-1b8d86a24c867e17)
+     Running unittests src/main.rs (target/debug/deps/day19-7a78bd6aa23295a1)
+     Running unittests src/main.rs (target/debug/deps/day20-1cb04165676336d1)
+     Running unittests src/main.rs (target/debug/deps/day21-e491d75b229f5461)
+     Running unittests src/main.rs (target/debug/deps/day22-808eb64290f5ca7a)
+     Running unittests src/main.rs (target/debug/deps/day23-ee35646b6ecc4bfb)
+     Running unittests src/main.rs (target/debug/deps/day24-43a94b997bb8ddba)
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "ntg",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y04",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fgs",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y04",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y02",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y02",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x01",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "kwq",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "ntg",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "kjc",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x04",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "kpj",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "pbm",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y01",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x02",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "djm",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tgd",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "psh",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fgs",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "rvg",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "kjc",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fst",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "vdt",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tnw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bfw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "frj",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tnw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fst",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "ffh",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "nrd",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x01",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bqk",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "frj",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tnw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fst",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "gnj",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tnw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "pbm",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tgd",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bfw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "mjb",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "gnj",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "wpb",
+        value: None,
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "nrd",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fgs",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x04",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "djm",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "pbm",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "nrd",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "vdt",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "kjc",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fst",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y04",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y02",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y01",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x02",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "ntg",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "kjc",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "psh",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fgs",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "qhw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tgd",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "pbm",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "djm",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x00",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y04",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bfw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bqk",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "nrd",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "fgs",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "frj",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "qhw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bqk",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "frj",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "y03",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "x01",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "hwm",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "bqk",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tgd",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "rvg",
+        value: Some(
+            false,
+        ),
+    },
+}
+[days/day24/src/main.rs:150:13] wire_ref = RefCell {
+    value: Wire {
+        name: "tnw",
+        value: Some(
+            true,
+        ),
+    },
+}
+[days/day24/src/main.rs:160:13] wire_ref = RefCell {
+    value: Wire {
+        name: "pbm",
+        value: Some(
+            true,
+        ),
+    },
+}
+thread 'day24_tests::test_apply' panicked at days/day24/src/main.rs:310:9:
+assertion `left == right` failed
+  left: [RefCell { value: Wire { name: "bfw", value: Some(true) } }, RefCell { value: Wire { name: "bqk", value: Some(true) } }, RefCell { value: Wire { name: "djm", value: Some(true) } }, RefCell { value: Wire { name: "ffh", value: Some(false) } }, RefCell { value: Wire { name: "fgs", value: Some(true) } }, RefCell { value: Wire { name: "frj", value: Some(true) } }, RefCell { value: Wire { name: "fst", value: Some(true) } }, RefCell { value: Wire { name: "gnj", value: Some(true) } }, RefCell { value: Wire { name: "hwm", value: Some(true) } }, RefCell { value: Wire { name: "kjc", value: Some(false) } }, RefCell { value: Wire { name: "kpj", value: Some(true) } }, RefCell { value: Wire { name: "kwq", value: Some(false) } }, RefCell { value: Wire { name: "mjb", value: Some(true) } }, RefCell { value: Wire { name: "nrd", value: Some(true) } }, RefCell { value: Wire { name: "ntg", value: Some(false) } }, RefCell { value: Wire { name: "pbm", value: Some(true) } }, RefCell { value: Wire { name: "psh", value: Some(true) } }, RefCell { value: Wire { name: "qhw", value: Some(true) } }, RefCell { value: Wire { name: "rvg", value: Some(false) } }, RefCell { value: Wire { name: "tgd", value: Some(false) } }, RefCell { value: Wire { name: "tnw", value: Some(true) } }, RefCell { value: Wire { name: "vdt", value: Some(true) } }, RefCell { value: Wire { name: "wpb", value: Some(false) } }, RefCell { value: Wire { name: "x00", value: Some(true) } }, RefCell { value: Wire { name: "x01", value: Some(false) } }, RefCell { value: Wire { name: "x02", value: Some(true) } }, RefCell { value: Wire { name: "x03", value: Some(true) } }, RefCell { value: Wire { name: "x04", value: Some(false) } }, RefCell { value: Wire { name: "y00", value: Some(true) } }, RefCell { value: Wire { name: "y01", value: Some(true) } }, RefCell { value: Wire { name: "y02", value: Some(true) } }, RefCell { value: Wire { name: "y03", value: Some(true) } }, RefCell { value: Wire { name: "y04", value: Some(true) } }, RefCell { value: Wire { name: "z00", value: Some(false) } }, RefCell { value: Wire { name: "z01", value: Some(false) } }, RefCell { value: Wire { name: "z02", value: Some(false) } }, RefCell { value: Wire { name: "z03", value: Some(true) } }, RefCell { value: Wire { name: "z04", value: Some(false) } }, RefCell { value: Wire { name: "z05", value: Some(true) } }, RefCell { value: Wire { name: "z06", value: Some(true) } }, RefCell { value: Wire { name: "z07", value: Some(true) } }, RefCell { value: Wire { name: "z08", value: Some(true) } }, RefCell { value: Wire { name: "z09", value: Some(true) } }, RefCell { value: Wire { name: "z10", value: Some(true) } }, RefCell { value: Wire { name: "z11", value: Some(false) } }, RefCell { value: Wire { name: "z12", value: Some(false) } }]
+ right: [RefCell { value: Wire { name: "bfw", value: Some(true) } }, RefCell { value: Wire { name: "bqk", value: Some(true) } }, RefCell { value: Wire { name: "djm", value: Some(true) } }, RefCell { value: Wire { name: "ffh", value: Some(false) } }, RefCell { value: Wire { name: "fgs", value: Some(true) } }, RefCell { value: Wire { name: "frj", value: Some(true) } }, RefCell { value: Wire { name: "fst", value: Some(true) } }, RefCell { value: Wire { name: "gnj", value: Some(true) } }, RefCell { value: Wire { name: "hwm", value: Some(true) } }, RefCell { value: Wire { name: "kjc", value: Some(false) } }, RefCell { value: Wire { name: "kpj", value: Some(true) } }, RefCell { value: Wire { name: "kwq", value: Some(false) } }, RefCell { value: Wire { name: "mjb", value: Some(true) } }, RefCell { value: Wire { name: "nrd", value: Some(true) } }, RefCell { value: Wire { name: "ntg", value: Some(false) } }, RefCell { value: Wire { name: "pbm", value: Some(true) } }, RefCell { value: Wire { name: "psh", value: Some(true) } }, RefCell { value: Wire { name: "qhw", value: Some(true) } }, RefCell { value: Wire { name: "rvg", value: Some(false) } }, RefCell { value: Wire { name: "tgd", value: Some(false) } }, RefCell { value: Wire { name: "tnw", value: Some(true) } }, RefCell { value: Wire { name: "vdt", value: Some(true) } }, RefCell { value: Wire { name: "wpb", value: Some(false) } }, RefCell { value: Wire { name: "x01", value: Some(false) } }, RefCell { value: Wire { name: "x02", value: Some(true) } }, RefCell { value: Wire { name: "x03", value: Some(true) } }, RefCell { value: Wire { name: "x04", value: Some(false) } }, RefCell { value: Wire { name: "y00", value: Some(true) } }, RefCell { value: Wire { name: "y01", value: Some(true) } }, RefCell { value: Wire { name: "y02", value: Some(true) } }, RefCell { value: Wire { name: "y03", value: Some(true) } }, RefCell { value: Wire { name: "y04", value: Some(true) } }, RefCell { value: Wire { name: "z00", value: Some(false) } }, RefCell { value: Wire { name: "z01", value: Some(false) } }, RefCell { value: Wire { name: "z02", value: Some(false) } }, RefCell { value: Wire { name: "z03", value: Some(true) } }, RefCell { value: Wire { name: "z04", value: Some(false) } }, RefCell { value: Wire { name: "z05", value: Some(true) } }, RefCell { value: Wire { name: "z06", value: Some(true) } }, RefCell { value: Wire { name: "z07", value: Some(true) } }, RefCell { value: Wire { name: "z08", value: Some(true) } }, RefCell { value: Wire { name: "z09", value: Some(true) } }, RefCell { value: Wire { name: "z10", value: Some(true) } }, RefCell { value: Wire { name: "z11", value: Some(false) } }, RefCell { value: Wire { name: "z12", value: Some(false) } }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p day24 --bin day24`
