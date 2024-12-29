@@ -109,6 +109,7 @@ fn main() {
     println!("Part 1 = {}", fits);
 }
 
+#[cfg(test)]
 mod day25_tests {
     use super::*;
 
