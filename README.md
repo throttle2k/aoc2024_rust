@@ -25,4 +25,4 @@ My solutions for Advent of Code 2024 in Rust
 - [x] Day 21: Keypad Conundrum
 - [x] Day 22: Monkey Market
 - [x] Day 23: LAN Party
-- [ ] Day 24: Crossed Wires
+- [x] Day 24: Crossed Wires

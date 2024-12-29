@@ -1,8 +1,9 @@
 use std::{cell::RefCell, cmp::Reverse};
 
 use common::read_input;
+use itertools::Itertools;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Wire {
     name: String,
     value: Option<bool>,
@@ -33,7 +34,7 @@ impl Wire {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum GateKind {
     AND,
     XOR,
@@ -51,7 +52,7 @@ impl From<&str> for GateKind {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Gate {
     kind: GateKind,
     input_1: String,
@@ -106,6 +107,41 @@ impl Gate {
 }
 
 #[derive(Debug)]
+struct Binary(String);
+
+impl From<&[bool]> for Binary {
+    fn from(value: &[bool]) -> Self {
+        let binary = value
+            .iter()
+            .map(|v| match v {
+                true => "1",
+                false => "0",
+            })
+            .collect::<String>();
+        Binary(binary)
+    }
+}
+
+impl From<usize> for Binary {
+    fn from(value: usize) -> Self {
+        let binary = format!("{:b}", value);
+        Binary(binary)
+    }
+}
+
+impl AsRef<str> for Binary {
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl Binary {
+    fn as_val(&self) -> usize {
+        usize::from_str_radix(&self.0, 2).unwrap()
+    }
+}
+
+#[derive(Debug, Clone)]
 struct Circuit {
     wires: Vec<RefCell<Wire>>,
     gates: Vec<Gate>,
@@ -176,22 +212,64 @@ impl Circuit {
         });
     }
 
-    fn get_z_value(&self) -> usize {
+    fn get_value(&self, id: char) -> usize {
         let mut wires = self
             .wires
             .iter()
-            .filter(|w| w.borrow().name.starts_with("z"))
+            .filter(|w| w.borrow().name.starts_with(id))
             .map(|w| w.borrow())
             .collect::<Vec<_>>();
         wires.sort_by_key(|w| Reverse(w.name.clone()));
-        let binary = wires
+        let binary = wires.iter().map(|w| w.value.unwrap()).collect::<Vec<_>>();
+        let binary: Binary = binary.as_slice().into();
+        binary.as_val()
+    }
+
+    fn get_z_value(&self) -> usize {
+        self.get_value('z')
+    }
+
+    fn find_fix_2(&self) -> String {
+        let output_gates = self
+            .gates
             .iter()
-            .map(|w| match w.value.unwrap() {
-                true => "1",
-                false => "0",
-            })
-            .collect::<String>();
-        usize::from_str_radix(binary.as_str(), 2).unwrap()
+            .flat_map(|g| vec![(&g.input_1, &g.kind), (&g.input_2, &g.kind)])
+            .collect::<Vec<_>>();
+        let mut to_swap = vec![];
+        self.gates.iter().for_each(|g| match g.kind {
+            GateKind::AND => {
+                if g.input_1 != "x00"
+                    && g.input_2 != "x00"
+                    && !output_gates.contains(&(&g.output, &GateKind::OR))
+                {
+                    to_swap.push(&g.output);
+                }
+            }
+            GateKind::OR => {
+                if g.output.starts_with("z") && g.output != "z45" {
+                    to_swap.push(&g.output);
+                }
+                if output_gates.contains(&(&g.output, &GateKind::OR)) {
+                    to_swap.push(&g.output);
+                }
+            }
+            GateKind::XOR => {
+                if g.input_1.starts_with("x") || g.input_2.starts_with("x") {
+                    if g.input_1 != "x00"
+                        && g.input_2 != "x00"
+                        && !output_gates.contains(&(&g.output, &GateKind::XOR))
+                    {
+                        to_swap.push(&g.output);
+                    }
+                } else {
+                    if !g.output.starts_with("z") {
+                        to_swap.push(&g.output);
+                    }
+                }
+            }
+        });
+        to_swap.sort_unstable();
+        to_swap.into_iter().join(",")
     }
 }
 
@@ -200,6 +278,7 @@ fn main() {
     let circuit = Circuit::from(input.as_str());
     circuit.apply();
     println!("Part 1 = {}", circuit.get_z_value());
+    println!("Part 2 = {}", circuit.find_fix_2());
 }
 
 #[cfg(test)]
